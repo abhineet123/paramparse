@@ -1,35 +1,22 @@
-from distutils.core import setup
+import setuptools
 
-long_description = """
-A tiny tree implementation for Python.
+with open("ReadMe.md", "r") as fh:
+    long_description = fh.read()
 
-Features
-========
-
-    * Simple
-    * Functional
-    * Well-tested
-
-TinyTree requires Python 2.5 or newer.
-"""
-
-setup(
-        name="paramparse",
-        version="0.2.1",
-        description="A simple ordered tree implementation",
-        long_description=long_description,
-        author="Aldo Cortesi",
-        author_email="aldo@corte.si",
-        license="MIT",
-        url="https://github.com/cortesi/paramparse",
-        py_modules = ["paramparse"],
-        classifiers = [
-            "Intended Audience :: Developers",
-            "License :: OSI Approved :: MIT License",
-            "Development Status :: 4 - Beta",
-            "Programming Language :: Python",
-            "Operating System :: OS Independent",
-            "Topic :: Other/Nonlisted Topic",
-            "Topic :: Software Development :: Libraries",
-        ]
-    )
+setuptools.setup(
+    name="paramparse",
+    version="0.0.2",
+    author="Abhineet Singh",
+    author_email="abhineet.iiita@gmail.com",
+    description="argparse wrapper to allow hierarchically nested class based parameters",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/abhineet123/paramparse",
+    py_modules=["paramparse"],
+    packages=setuptools.find_packages(),
+    classifiers=[
+        "Programming Language :: Python",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
+)

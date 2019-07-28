@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: paramparse
+Version: 0.0.2
+Summary: argparse wrapper to allow hierarchically nested class based parameters
+Home-page: https://github.com/abhineet123/paramparse
+Author: Abhineet Singh
+Author-email: abhineet.iiita@gmail.com
+License: UNKNOWN
+Description: Python argparse wrapper to allow hierarchically nested class based parameters suitable for automatic code analysis
+        
+        
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
