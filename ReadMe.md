@@ -5,7 +5,9 @@ Please refer to the included parameter skeleton of a large multi object tracking
 
 It provides an excellent example of a highly modular project with deeply nested and shared modules.
 
-For example, this is one of the deeper instances of module nesting in this example: Params->Trainer->Target->Templates->Siamese->SiamFC->DesignParams.
+For example, this is one of the deeper instances of module nesting in this example: 
+
+`Params->Trainer->Target->Templates->Siamese->SiamFC->DesignParams`
 
 Parameter for this configuration can be provided as:
 
