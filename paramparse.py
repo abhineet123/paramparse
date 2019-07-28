@@ -219,7 +219,7 @@ def fromParser(parser: argparse.ArgumentParser,
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if '--cfg' not in all_params_names:
-        out_text += "\t\tself.cfg=''\n"
+        out_text += "\t\tself.cfg = ''\n"
     help_text = '\t\tself.help = {\n'
     doc_text = '\t"""\n'
 
@@ -238,7 +238,7 @@ def fromParser(parser: argparse.ArgumentParser,
         else:
             default_str = '{}'.format(_param.default)
 
-        out_text += '\t\tself.{}={}\n'.format(__name, default_str)
+        out_text += '\t\tself.{} = {}\n'.format(__name, default_str)
         help_text += "\t\t\t'{}': '{}',\n".format(__name, _help)
 
         doc_text += '\t:param {} {}: {}\n'.format(type(_param.default).__name__, __name, _help)
@@ -275,7 +275,7 @@ def fromDict(param_dict: dict, class_name='Params'):
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if 'cfg' not in all_params_names:
-        out_text += "\t\tself.cfg=''\n"
+        out_text += "\t\tself.cfg = ''\n"
     help_text = '\t\tself.help = {\n'
     doc_text = '\t"""\n'
 
@@ -288,7 +288,7 @@ def fromDict(param_dict: dict, class_name='Params'):
         else:
             default_str = '{}'.format(default)
 
-        out_text += '\t\tself.{}={}\n'.format(_name, default_str)
+        out_text += '\t\tself.{} = {}\n'.format(_name, default_str)
         help_text += "\t\t\t'{}': '{}',\n".format(_name, _help)
 
         doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, _name, _help)

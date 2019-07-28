@@ -4,7 +4,7 @@ import paramparse
 parser = argparse.ArgumentParser(description='FromParserDemo')
 
 parser.add_argument('--name', default='', type=str, help='name of the experiment')
-parser.add_argument('--cuda', default=True, type=str2bool, help='enable cuda')
+parser.add_argument('--cuda', default=True, type=bool, help='enable cuda')
 parser.add_argument('--max_iter', default=1e6, type=float, help='maximum training iteration')
 parser.add_argument('--batch_size', default=64, type=int, help='batch size')
 
@@ -35,7 +35,7 @@ parser.add_argument('--viz_ta_iter', default=10000, type=int, help='visdom trave
 parser.add_argument('--print_iter', default=500, type=int, help='print losses iter')
 
 parser.add_argument('--ckpt_dir', default='checkpoints', type=str, help='checkpoint directory')
-parser.add_argument('--ckpt_load', default=None, type=str, help='checkpoint name to load')
+parser.add_argument('--ckpt_load', default='', type=str, help='checkpoint name to load')
 parser.add_argument('--ckpt_save_iter', default=10000, type=int, help='checkpoint save iter')
 
 parser.add_argument('--output_dir', default='outputs', type=str, help='output directory')

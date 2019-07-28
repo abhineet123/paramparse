@@ -2,6 +2,7 @@
 *.dll
 *.pyc
 *~
+__pycache__/
 paramparse.egg-info/
 .idea/
 dist/
