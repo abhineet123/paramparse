@@ -2,6 +2,7 @@
 *.dll
 *.pyc
 *~
+paramparse.egg-info/
 .idea/
 dist/
 build/
