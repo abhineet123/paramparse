@@ -1,4 +1,5 @@
 Python argparse wrapper to allow hierarchically nested class based parameters suitable for automatic code analysis especially in [Pycharm](https://www.jetbrains.com/pycharm/).
+
 It also provides a unified parameter specification protocol that can be used to provide parameters through both text files and command line.
 
 Please refer to the included parameter skeleton of a large multi object tracking project for which the functionality included in this package was originally developed.
