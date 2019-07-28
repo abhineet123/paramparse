@@ -11,7 +11,7 @@ For example, this is one of the deeper instances of module nesting in this examp
 
 Parameter for this configuration can be provided as:
 
-trainer.target.templates.siamese.siamfc.design.exemplar_sz=150
+`trainer.target.templates.siamese.siamfc.design.exemplar_sz=150`
 
 Specifying multiple parameters for a deeply nested module can quickly become cumbersome especially from command line.
 The package thus provides a way to group parameters from the same module using the __@__ identifier.
