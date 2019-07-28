@@ -1,5 +1,3 @@
-import paramparse
-
 from Data import DataParams, TrainParams, TestParams
 from Trainer import TrainerParams
 from Tester import TesterParams
@@ -39,6 +37,3 @@ class Params:
             'trainer': 'Trainer parameters',
             'server': 'Server mode parameters for integration with the interactive interface',
         }
-
-    def processArguments(self):
-        paramparse.process(self)

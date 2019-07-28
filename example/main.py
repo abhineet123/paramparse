@@ -1,9 +1,10 @@
+import paramparse
+
 from Params import Params
 
 def main():
-    # get parameters
-    _params = Params()
-    _params.processArguments()
+    params = Params()
+    paramparse.process(params)
 
 
 if __name__ == '__main__':
