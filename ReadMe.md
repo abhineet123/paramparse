@@ -30,7 +30,7 @@ Assuming `pf = name1.name2`, following flavors are supported:
 @@@name: pf = name1.name
 @@@: pf = name1
 ```
-Usage of the package is very simple, involving a single function call to `paramparse.process` as demonstrated in [example/main.py](https://github.com/abhineet123/paramparse/blob/master/example/main.py).
+Usage of the package is very simple and involves calling `paramparse.process` as demonstrated in [example/main.py](https://github.com/abhineet123/paramparse/blob/master/example/main.py).
 
 Apart from the `process` function, it also provides two utility functions `argparse.fromParser` and `argparse.fromDict` that can create a parameter class compatible with this package from existing parameters in  `argparse.ArgumentParser` and `dict` formats respectively.
 The generated class code is writen to a python source file whose name can be specified as the second argument (defaults to `Params.py`).
