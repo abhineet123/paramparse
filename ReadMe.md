@@ -25,8 +25,8 @@ Usage of the package is very simple and demonstrated in [example/main.py](https:
 Apart from the `process` function, it also provides two utility functions `argparse.fromParser` and `argparse.fromDict` that can create a parameter class compatible with this package from existing parameters in  `argparse.ArgumentParser` and `dict` formats respectively.
 The generated class code is writen to a python source file whose name can be specified as the second argument (defaults to `Params.py`).
 
-__Note__ : paramparse uses the reserved parameter `cfg` to specify path to a text file containing parameter values.
-If an existing argparse or dict parameter set to be converted into paramparse class already has a `cfg` field used for some other purpose, it will conflict with the parser so please rename this field before or after converting but before running `paramparse.process`.
+__Note__ : `paramparse` uses the reserved parameter `cfg` to specify path to a text file containing parameter values.
+If an existing argparse or dict object to be converted into `paramparse` class already has a `cfg` field used for some other purpose, it will conflict with the parser so please rename this field before or after converting but before running `paramparse.process`.
 
 Usage of both functions is demonstrated in [example/utils_demo.py](https://github.com/abhineet123/paramparse/blob/master/example/utils_demo.py)
 
