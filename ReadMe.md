@@ -26,7 +26,7 @@ Apart from the `process` function, it also provides two utility functions `argpa
 The generated class code is writen to a python source file whose name can be specified as the second argument (defaults to `Params.py`).
 
 __Note__ : paramparse uses the reserved parameter `cfg` to specify path to a text file containing parameter values.
-If an existing argparse or dict parameters to be converted into paramparse class already has a `cfg` field used for some other purpose, it will conflict with the parser so please rename this field before or after converting but before running `paramparse.process`.
+If an existing argparse or dict parameter set to be converted into paramparse class already has a `cfg` field used for some other purpose, it will conflict with the parser so please rename this field before or after converting but before running `paramparse.process`.
 
 Usage of both functions is demonstrated in [example/utils_demo.py](https://github.com/abhineet123/paramparse/blob/master/example/utils_demo.py)
 
