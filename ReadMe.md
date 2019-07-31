@@ -18,6 +18,7 @@ An example is provided in [example/cfg/params.cfg](https://github.com/abhineet12
 Note that the indentation used in this file is only for ease of human parsing and is not needed as this system of grouping also works from command line.
 Example commands are in [example/commands.md](https://github.com/abhineet123/paramparse/blob/master/example/commands.md)
 The __@__ identifier specifies a prefix `pf` to be added to all subsequent arguments so that `arg_name` is treated as `pf.arg_name`.
+
 Assuming `pf = name1.name2`, following flavors are supported:
 
 ```
