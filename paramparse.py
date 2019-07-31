@@ -233,15 +233,18 @@ def fromParser(parser: argparse.ArgumentParser,
         default = _param.default
         if default is None:
             raise IOError('None default found for param: {}'.format(__name))
+
         elif isinstance(default, str):
             default_str = "'{}'".format(_param.default)
         else:
             default_str = '{}'.format(_param.default)
 
-        out_text += '\t\tself.{} = {}\n'.format(__name, default_str)
-        help_text += "\t\t\t'{}': '{}',\n".format(__name, _help)
+        var_name = __name.replace('-', '_').replace(' ', '_')
 
-        doc_text += '\t:param {} {}: {}\n'.format(type(_param.default).__name__, __name, _help)
+        out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
+        help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
+
+        doc_text += '\t:param {} {}: {}\n'.format(type(_param.default).__name__, var_name, _help)
 
     help_text += "\t\t}"
     doc_text += '\t"""\n'
@@ -288,10 +291,12 @@ def fromDict(param_dict: dict, class_name='Params'):
         else:
             default_str = '{}'.format(default)
 
-        out_text += '\t\tself.{} = {}\n'.format(_name, default_str)
-        help_text += "\t\t\t'{}': '{}',\n".format(_name, _help)
+        var_name = _name.replace('-', '_').replace(' ', '_')
 
-        doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, _name, _help)
+        out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
+        help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
+
+        doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, var_name, _help)
 
     help_text += "\t\t}"
     doc_text += '\t"""\n'
