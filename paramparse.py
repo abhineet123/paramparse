@@ -4,11 +4,12 @@ import json
 import inspect
 import argparse
 from ast import literal_eval
+from pprint import pformat
 
 # from datetime import datetime
 try:
     import cPickle as pickle
-except:
+except ImportError:
     import pickle
 
 
@@ -81,13 +82,14 @@ def writeTo(obj, dir_name, prefix='', out_name='params.cfg'):
     _recursiveWrite(obj, prefix, save_fid)
 
 
-def readFrom(obj, dir_name, prefix='', out_name='params.cfg'):
+def readFrom(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
     load_path = os.path.join(dir_name, out_name)
     lines = open(load_path, "r").readlines()
     args_in = ['--{}'.format(k.strip()) for k in lines]
     if prefix:
         args_in = [k.replace(prefix + '.', '') for k in args_in]
-    process(obj, args_in=args_in)
+    process(obj, args_in=args_in, prog=prefix,
+            usage=None, allow_unknown=allow_unknown)
 
 
 def _recursiveLoad(obj, loaded_obj, prefix):
@@ -97,7 +99,7 @@ def _recursiveLoad(obj, loaded_obj, prefix):
     for member in obj_members:
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
         if member not in load_members:
-            print('{:s} missing from loaded params so using default'.format(member_name))
+            print('{:s} missing from loaded params'.format(member_name))
             continue
         default_val = getattr(obj, member)
         load_val = getattr(loaded_obj, member)
@@ -218,8 +220,26 @@ def _processArgsFromParser(obj, args):
         _assignArg(obj, key_parts, 0, val)
 
 
-def process(obj, args_in=None, cmd=True, cfg=''):
-    parser = argparse.ArgumentParser(usage='%(prog)s [options]')
+def process(obj, args_in=None, cmd=True, cfg='', prog='',
+            usage='%(prog)s [options]', allow_unknown=0):
+    """
+
+    :param obj:
+    :param list | None args_in:
+    :param str cmd:
+    :param str cfg:
+    :param str prog:
+    :param str | None usage:
+    :return:
+    """
+    arg_dict = {}
+    if prog:
+        arg_dict['prog'] = prog
+    if usage is None:
+        arg_dict['usage'] = argparse.SUPPRESS
+    elif usage:
+        arg_dict['usage'] = usage
+    parser = argparse.ArgumentParser(**arg_dict)
     _addParamsToParser(parser, obj)
 
     if args_in is None:
@@ -301,7 +321,12 @@ def process(obj, args_in=None, cmd=True, cfg=''):
         if help_mode:
             args_in.insert(0, help_mode)
 
-    args = parser.parse_args(args_in)
+    if allow_unknown:
+        args, unknown = parser.parse_known_args(args_in)
+        if unknown:
+            print('Unknown arguments found:\n{}'.format(pformat(unknown)))
+    else:
+        args = parser.parse_args(args_in)
     _processArgsFromParser(obj, args)
 
     # print('train_seq_ids: ', self.train_seq_ids)
