@@ -19,7 +19,7 @@ def scalarToString(val, add_quotes=False):
         return '{:f}'.format(val)
     elif isinstance(val, str):
         if add_quotes:
-            return '"{:s}"'.format(val)
+            return "'{:s}'".format(val)
         else:
             return val
     print('Invalid scalar: ', val)
@@ -31,7 +31,7 @@ def tupleToString(vals):
     for val in vals:
         if isinstance(val, (int, bool, float, str)):
             _str = '{:s}{:s},'.format(_str, scalarToString(val, True))
-        elif isinstance(val, tuple):
+        elif isinstance(val, (tuple, list)):
             _str = '{:s}{:s},'.format(_str, tupleToString(val))
         elif isinstance(val, dict):
             _str = '{:s}{:s},'.format(_str, dictToString(val))
@@ -45,7 +45,7 @@ def dictToString(vals):
         key_str = scalarToString(key)
         if isinstance(val, (int, bool, float, str)):
             _str = '{:s}{:s}:{:s},'.format(_str, key_str, scalarToString(val))
-        elif isinstance(val, tuple):
+        elif isinstance(val, (tuple, list)):
             _str = '{:s}{:s}:{:s},'.format(_str, key_str, tupleToString(val))
         elif isinstance(val, dict):
             _str = '{:s}{:s}:{:s},'.format(_str, key_str, dictToString(val))
