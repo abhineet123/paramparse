@@ -4,7 +4,124 @@ import json
 import inspect
 import argparse
 from ast import literal_eval
+
 # from datetime import datetime
+try:
+    import cPickle as pickle
+except:
+    import pickle
+
+
+def scalarToString(val, add_quotes=False):
+    if isinstance(val, (int, bool)):
+        return '{:d}'.format(int(val))
+    elif isinstance(val, float):
+        return '{:f}'.format(val)
+    elif isinstance(val, str):
+        if add_quotes:
+            return '"{:s}"'.format(val)
+        else:
+            return val
+    print('Invalid scalar: ', val)
+    return None
+
+
+def tupleToString(vals):
+    _str = ''
+    for val in vals:
+        if isinstance(val, (int, bool, float, str)):
+            _str = '{:s}{:s},'.format(_str, scalarToString(val, True))
+        elif isinstance(val, tuple):
+            _str = '{:s}{:s},'.format(_str, tupleToString(val))
+        elif isinstance(val, dict):
+            _str = '{:s}{:s},'.format(_str, dictToString(val))
+    return '({:s})'.format(_str)
+
+
+def dictToString(vals):
+    _str = '{{'
+    for key in vals.keys():
+        val = vals[key]
+        key_str = scalarToString(key)
+        if isinstance(val, (int, bool, float, str)):
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, scalarToString(val))
+        elif isinstance(val, tuple):
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, tupleToString(val))
+        elif isinstance(val, dict):
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, dictToString(val))
+    _str += '}}'
+    return _str
+
+
+def strToTuple(val):
+    if val.startswith('range('):
+        val_list = val[6:].replace(')', '').split(',')
+        val_list = [int(x) for x in val_list]
+        val_list = tuple(range(*val_list))
+        return val_list
+    elif ',' not in val:
+        val = '{},'.format(val)
+    return literal_eval(val)
+
+
+def saveTo(obj, dir_name, out_name='params.bin'):
+    save_path = os.path.join(dir_name, out_name)
+    pickle.dump(obj, open(save_path, "wb"))
+
+
+def loadFrom(obj, dir_name, prefix='', out_name='params.bin'):
+    load_path = os.path.join(dir_name, out_name)
+    params = pickle.load(open(load_path, "rb"))
+    _recursiveLoad(obj, params, prefix)
+
+
+def writeTo(obj, dir_name, prefix='', out_name='params.cfg'):
+    save_path = os.path.join(dir_name, out_name)
+    save_fid = open(save_path, "w")
+    _recursiveWrite(obj, prefix, save_fid)
+
+
+def readFrom(obj, dir_name, prefix='', out_name='params.cfg'):
+    load_path = os.path.join(dir_name, out_name)
+    lines = open(load_path, "r").readlines()
+    args_in = ['--{}'.format(k.strip()) for k in lines]
+    if prefix:
+        args_in = [k.replace(prefix + '.', '') for k in args_in]
+    process(obj, args_in=args_in)
+
+
+def _recursiveLoad(obj, loaded_obj, prefix):
+    load_members = [attr for attr in dir(loaded_obj) if
+                    not callable(getattr(loaded_obj, attr)) and not attr.startswith("__")]
+    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
+    for member in obj_members:
+        member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
+        if member not in load_members:
+            print('{:s} missing from loaded params so using default'.format(member_name))
+            continue
+        default_val = getattr(obj, member)
+        load_val = getattr(loaded_obj, member)
+        if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
+            setattr(obj, member, load_val)
+        else:
+            _recursiveLoad(default_val, load_val, member_name)
+
+
+def _recursiveWrite(obj, prefix, save_fid):
+    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
+    for member in obj_members:
+        if member == 'help':
+            continue
+        member_val = getattr(obj, member)
+        member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
+        if isinstance(member_val, (int, bool, float, str)):
+            save_fid.write('{:s}={:s}\n'.format(member_name, scalarToString(member_val)))
+        elif isinstance(member_val, tuple):
+            save_fid.write('{:s}={:s}\n'.format(member_name, tupleToString(member_val)))
+        elif isinstance(member_val, dict):
+            save_fid.write('{:s}={:s}\n'.format(member_name, dictToString(member_val)))
+        else:
+            _recursiveWrite(member_val, member_name, save_fid)
 
 
 def helpFromDocs(obj, member):
@@ -24,16 +141,6 @@ def helpFromDocs(obj, member):
         _help = relevant_line[0].replace(templ, '')
 
     return _help
-
-def strToTuple(val):
-    if val.startswith('range('):
-        val_list = val[6:].replace(')', '').split(',')
-        val_list = [int(x) for x in val_list]
-        val_list = tuple(range(*val_list))
-        return val_list
-    elif ',' not in val:
-        val = '{},'.format(val)
-    return literal_eval(val)
 
 
 def _addParamsToParser(parser, obj, root_name='', obj_name=''):
@@ -110,20 +217,23 @@ def _processArgsFromParser(obj, args):
         key_parts = key.split('.')
         _assignArg(obj, key_parts, 0, val)
 
-def process(obj, args_in=None):
+
+def process(obj, args_in=None, cmd=True, cfg=''):
     parser = argparse.ArgumentParser(usage='%(prog)s [options]')
     _addParamsToParser(parser, obj)
 
     if args_in is None:
-        cfg = ''
-        if hasattr(obj, 'cfg'):
-            cfg = getattr(obj, 'cfg')
-        # check for a custom cfg file specified at command line
-        if len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
-            _, arg_val = sys.argv[1].split('=')
-            cfg = arg_val
+        if not cfg:
             if hasattr(obj, 'cfg'):
-                obj.cfg = cfg
+                cfg = getattr(obj, 'cfg')
+            # check for a custom cfg file specified at command line
+            if cmd and len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
+                _, arg_val = sys.argv[1].split('=')
+                cfg = arg_val
+
+        if not cfg and hasattr(obj, 'cfg'):
+            obj.cfg = cfg
+
         args_in = []
         if os.path.isfile(cfg):
             print('Reading parameters from {:s}'.format(cfg))
@@ -134,15 +244,16 @@ def process(obj, args_in=None):
             args_in += file_args
             # command line arguments override those in the cfg file
 
-        # reset prefix before command line args
-        args_in.append('@')
-        cmd_args = list(sys.argv[1:])
         help_mode = ''
-        if cmd_args[0] in ('--h', '--help'):
-            # args_in.insert(0, cmd_args[0])
-            help_mode = cmd_args[0]
-            cmd_args = cmd_args[1:]
-        args_in += cmd_args
+        if cmd:
+            # reset prefix before command line args
+            args_in.append('@')
+            cmd_args = list(sys.argv[1:])
+            if cmd_args[0] in ('--h', '--help'):
+                # args_in.insert(0, cmd_args[0])
+                help_mode = cmd_args[0]
+                cmd_args = cmd_args[1:]
+            args_in += cmd_args
 
         args_in = [k if k.startswith('--') else '--{}'.format(k) for k in args_in]
 
@@ -198,8 +309,9 @@ def process(obj, args_in=None):
 
     return args_in
 
+
 def fromParser(parser: argparse.ArgumentParser,
-                   class_name='Params'):
+               class_name='Params'):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -316,6 +428,7 @@ def fromDict(param_dict: dict, class_name='Params'):
     with open(out_path, 'w') as fid:
         fid.write(out_text)
 
+
 if __name__ == '__main__':
     import pyperclip
 
@@ -330,4 +443,3 @@ if __name__ == '__main__':
     if not isinstance(_dict, dict):
         raise IOError('Clipboard contents do not form a valid dict:\n{}'.format(in_txt))
     fromDict(_dict)
-
