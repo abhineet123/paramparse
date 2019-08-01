@@ -110,91 +110,93 @@ def _processArgsFromParser(obj, args):
         key_parts = key.split('.')
         _assignArg(obj, key_parts, 0, val)
 
-def process(obj):
+def process(obj, args_in=None):
     parser = argparse.ArgumentParser(usage='%(prog)s [options]')
     _addParamsToParser(parser, obj)
 
-    cfg = ''
-    if hasattr(obj, 'cfg'):
-        cfg = getattr(obj, 'cfg')
-    # check for a custom cfg file specified at command line
-    if len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
-        _, arg_val = sys.argv[1].split('=')
-        cfg = arg_val
+    if args_in is None:
+        cfg = ''
         if hasattr(obj, 'cfg'):
-            obj.cfg = cfg
-    args_in = []
-    if os.path.isfile(cfg):
-        print('Reading parameters from {:s}'.format(cfg))
-        file_args = open(cfg, 'r').readlines()
-        file_args = [arg.strip() for arg in file_args if arg.strip()]
-        # lines starting with # in the cfg file are regarded as comments and thus ignored
-        file_args = ['--{:s}'.format(arg) for arg in file_args if not arg.startswith('#')]
-        args_in += file_args
-        # command line arguments override those in the cfg file
+            cfg = getattr(obj, 'cfg')
+        # check for a custom cfg file specified at command line
+        if len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
+            _, arg_val = sys.argv[1].split('=')
+            cfg = arg_val
+            if hasattr(obj, 'cfg'):
+                obj.cfg = cfg
+        args_in = []
+        if os.path.isfile(cfg):
+            print('Reading parameters from {:s}'.format(cfg))
+            file_args = open(cfg, 'r').readlines()
+            file_args = [arg.strip() for arg in file_args if arg.strip()]
+            # lines starting with # in the cfg file are regarded as comments and thus ignored
+            file_args = ['--{:s}'.format(arg) for arg in file_args if not arg.startswith('#')]
+            args_in += file_args
+            # command line arguments override those in the cfg file
 
-    # reset prefix before command line args
-    args_in.append('@')
-    cmd_args = list(sys.argv[1:])
-    help_mode = ''
-    if cmd_args[0] in ('--h', '--help'):
-        # args_in.insert(0, cmd_args[0])
-        help_mode = cmd_args[0]
-        cmd_args = cmd_args[1:]
-    args_in += cmd_args
+        # reset prefix before command line args
+        args_in.append('@')
+        cmd_args = list(sys.argv[1:])
+        help_mode = ''
+        if cmd_args[0] in ('--h', '--help'):
+            # args_in.insert(0, cmd_args[0])
+            help_mode = cmd_args[0]
+            cmd_args = cmd_args[1:]
+        args_in += cmd_args
 
-    args_in = [k if k.startswith('--') else '--{}'.format(k) for k in args_in]
+        args_in = [k if k.startswith('--') else '--{}'.format(k) for k in args_in]
 
-    # pf: Prefix to be added to all subsequent arguments to avoid very long argument names
-    # for deeply nested module parameters:
-    # with pf=name1.name2
-    # @name: pf=name
-    # @@name: pf=name1.name2.name
-    # @@@name: pf=name1.name
+        # pf: Prefix to be added to all subsequent arguments to avoid very long argument names
+        # for deeply nested module parameters:
+        # with pf=name1.name2
+        # @name: pf=name
+        # @@name: pf=name1.name2.name
+        # @@@name: pf=name1.name
 
-    _args_in = []
-    pf = ''
-    for _id, _arg in enumerate(args_in):
-        _arg = _arg[2:]
-        if _arg.startswith('@'):
-            _name = _arg[1:].strip()
-            if _name.startswith('@@'):
-                if '.' in pf:
-                    _idx = pf.rfind('.')
-                    pf = pf[:_idx]
+        _args_in = []
+        pf = ''
+        for _id, _arg in enumerate(args_in):
+            _arg = _arg[2:]
+            if _arg.startswith('@'):
+                _name = _arg[1:].strip()
+                if _name.startswith('@@'):
+                    if '.' in pf:
+                        _idx = pf.rfind('.')
+                        pf = pf[:_idx]
+                    else:
+                        pf = ''
+                    _name = _name[2:].strip()
+                    if pf and _name:
+                        pf = '{}.{}'.format(pf, _name)
+                    elif pf:
+                        pass
+                    elif _name:
+                        pf = _name
+                elif _name.startswith('@'):
+                    _name = _name[1:].strip()
+                    if pf and _name:
+                        pf = '{}.{}'.format(pf, _name)
                 else:
-                    pf = ''
-                _name = _name[2:].strip()
-                if pf and _name:
-                    pf = '{}.{}'.format(pf, _name)
-                elif pf:
-                    pass
-                elif _name:
                     pf = _name
-            elif _name.startswith('@'):
-                _name = _name[1:].strip()
-                if pf and _name:
-                    pf = '{}.{}'.format(pf, _name)
-            else:
-                pf = _name
-            continue
-        try:
-            _name, _val = _arg.split('=')
-        except ValueError as e:
-            raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
-        if pf:
-            _name = '{}.{}'.format(pf, _name)
-        _args_in.append('--{}={}'.format(_name, _val))
-    args_in = _args_in
+                continue
+            try:
+                _name, _val = _arg.split('=')
+            except ValueError as e:
+                raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
+            if pf:
+                _name = '{}.{}'.format(pf, _name)
+            _args_in.append('--{}={}'.format(_name, _val))
+        args_in = _args_in
+        if help_mode:
+            args_in.insert(0, help_mode)
 
-    if help_mode:
-        args_in.insert(0, help_mode)
     args = parser.parse_args(args_in)
-
     _processArgsFromParser(obj, args)
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)
+
+    return args_in
 
 def fromParser(parser: argparse.ArgumentParser,
                    class_name='Params'):
