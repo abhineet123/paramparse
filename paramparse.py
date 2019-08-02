@@ -6,7 +6,6 @@ import argparse
 from ast import literal_eval
 from pprint import pformat
 
-# from datetime import datetime
 try:
     import cPickle as pickle
 except ImportError:
@@ -73,7 +72,10 @@ def saveTo(obj, dir_name, out_name='params.bin'):
 def loadFrom(obj, dir_name, prefix='', out_name='params.bin'):
     load_path = os.path.join(dir_name, out_name)
     params = pickle.load(open(load_path, "rb"))
-    _recursiveLoad(obj, params, prefix)
+    missing_params=[]
+    _recursiveLoad(obj, params, prefix, missing_params)
+    if missing_params:
+        print('Missing loaded parameters found:\n{}'.format(pformat(missing_params)))
 
 
 def writeTo(obj, dir_name, prefix='', out_name='params.cfg'):
@@ -92,21 +94,21 @@ def readFrom(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
             usage=None, allow_unknown=allow_unknown)
 
 
-def _recursiveLoad(obj, loaded_obj, prefix):
+def _recursiveLoad(obj, loaded_obj, prefix, missing_params):
     load_members = [attr for attr in dir(loaded_obj) if
                     not callable(getattr(loaded_obj, attr)) and not attr.startswith("__")]
     obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
     for member in obj_members:
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
         if member not in load_members:
-            print('{:s} missing from loaded params'.format(member_name))
+            missing_params.append(member_name)
             continue
         default_val = getattr(obj, member)
         load_val = getattr(loaded_obj, member)
         if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
             setattr(obj, member, load_val)
         else:
-            _recursiveLoad(default_val, load_val, member_name)
+            _recursiveLoad(default_val, load_val, member_name, missing_params)
 
 
 def _recursiveWrite(obj, prefix, save_fid):
@@ -455,8 +457,6 @@ def fromDict(param_dict: dict, class_name='Params'):
 
 
 if __name__ == '__main__':
-    import pyperclip
-
     try:
         from Tkinter import Tk
     except ImportError:
