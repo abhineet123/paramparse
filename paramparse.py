@@ -72,7 +72,7 @@ def saveTo(obj, dir_name, out_name='params.bin'):
 def loadFrom(obj, dir_name, prefix='', out_name='params.bin'):
     load_path = os.path.join(dir_name, out_name)
     params = pickle.load(open(load_path, "rb"))
-    missing_params=[]
+    missing_params = []
     _recursiveLoad(obj, params, prefix, missing_params)
     if missing_params:
         print('Missing loaded parameters found:\n{}'.format(pformat(missing_params)))
@@ -159,7 +159,9 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
         if member == 'help':
             continue
         default_val = getattr(obj, member)
-        if isinstance(default_val, (int, bool, float, str, tuple, dict)):
+        if default_val is None:
+            continue
+        if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
             if root_name:
                 member_param_name = '{:s}.{:s}'.format(root_name, member)
             else:
