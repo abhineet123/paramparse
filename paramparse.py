@@ -370,7 +370,7 @@ def fromParser(parser: argparse.ArgumentParser,
     help_text = '\t\tself.help = {\n'
 
     if parser.description is not None:
-        help_text += "\t\t\t__desc__: '{}',\n".format(parser.description)
+        help_text += "\t\t\t'__desc__': '{}',\n".format(parser.description)
 
     doc_text = '\t"""\n'
 
