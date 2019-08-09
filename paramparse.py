@@ -342,8 +342,7 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
     return args_in
 
 
-def fromParser(parser: argparse.ArgumentParser,
-               class_name='Params'):
+def fromParser(parser, class_name='Params'):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -414,7 +413,7 @@ def fromParser(parser: argparse.ArgumentParser,
         fid.write(out_text)
 
 
-def fromDict(param_dict: dict, class_name='Params'):
+def fromDict(param_dict, class_name='Params'):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
