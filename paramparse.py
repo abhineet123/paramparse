@@ -64,12 +64,12 @@ def strToTuple(val):
     return literal_eval(val)
 
 
-def saveTo(obj, dir_name, out_name='params.bin'):
+def save(obj, dir_name, out_name='params.bin'):
     save_path = os.path.join(dir_name, out_name)
     pickle.dump(obj, open(save_path, "wb"))
 
 
-def loadFrom(obj, dir_name, prefix='', out_name='params.bin'):
+def load(obj, dir_name, prefix='', out_name='params.bin'):
     load_path = os.path.join(dir_name, out_name)
     params = pickle.load(open(load_path, "rb"))
     missing_params = []
@@ -78,13 +78,13 @@ def loadFrom(obj, dir_name, prefix='', out_name='params.bin'):
         print('Missing loaded parameters found:\n{}'.format(pformat(missing_params)))
 
 
-def writeTo(obj, dir_name, prefix='', out_name='params.cfg'):
+def write(obj, dir_name, prefix='', out_name='params.cfg'):
     save_path = os.path.join(dir_name, out_name)
     save_fid = open(save_path, "w")
     _recursiveWrite(obj, prefix, save_fid)
 
 
-def readFrom(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
+def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
     load_path = os.path.join(dir_name, out_name)
     lines = open(load_path, "r").readlines()
     args_in = ['--{}'.format(k.strip()) for k in lines]
@@ -166,7 +166,7 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
                 member_param_name = '{:s}.{:s}'.format(root_name, member)
             else:
                 member_param_name = '{:s}'.format(member)
-            if member in obj.help:
+            if hasattr(obj, 'help') and member in obj.help:
                 _help = obj.help[member]
             else:
                 _help = helpFromDocs(obj, member)
@@ -243,6 +243,9 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
         arg_dict['usage'] = argparse.SUPPRESS
     elif usage:
         arg_dict['usage'] = usage
+    if hasattr(obj, 'help') and '__desc__' in obj.help:
+        arg_dict['description'] = obj.help['__desc__']
+
     parser = argparse.ArgumentParser(**arg_dict)
     _addParamsToParser(parser, obj)
 
@@ -349,6 +352,7 @@ def fromParser(parser: argparse.ArgumentParser,
     :param str class_name:
     :return:
     """
+
     optionals = parser._optionals._option_string_actions
     positionals = parser._positionals._option_string_actions
     try:
@@ -364,6 +368,10 @@ def fromParser(parser: argparse.ArgumentParser,
     if '--cfg' not in all_params_names:
         out_text += "\t\tself.cfg = ''\n"
     help_text = '\t\tself.help = {\n'
+
+    if parser.description is not None:
+        help_text += "\t\t\t__desc__: '{}',\n".format(parser.description)
+
     doc_text = '\t"""\n'
 
     for _name in all_params_names:
