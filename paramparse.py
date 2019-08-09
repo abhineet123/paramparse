@@ -354,11 +354,9 @@ def fromParser(parser, class_name='Params'):
 
     optionals = parser._optionals._option_string_actions
     positionals = parser._positionals._option_string_actions
-    try:
-        all_params = {**optionals, **positionals}
-    except:
-        all_params = optionals.copy()
-        all_params.update(positionals)
+
+    all_params = optionals.copy()
+    all_params.update(positionals)
 
     all_params_names = sorted(list(all_params.keys()))
 
@@ -375,7 +373,7 @@ def fromParser(parser, class_name='Params'):
 
     for _name in all_params_names:
         __name = _name[2:]
-        if not __name or _name == '--h' or _name == '--help':
+        if not __name or _name in ('--h', '-h', '--help'):
             continue
         _param = all_params[_name]
         _help = _param.help
