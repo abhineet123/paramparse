@@ -276,7 +276,7 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
             # reset prefix before command line args
             args_in.append('@')
             cmd_args = list(sys.argv[1:])
-            if cmd_args[0] in ('--h', '--help'):
+            if cmd_args[0] in ('--h', '-h', '--help'):
                 # args_in.insert(0, cmd_args[0])
                 help_mode = cmd_args[0]
                 cmd_args = cmd_args[1:]
