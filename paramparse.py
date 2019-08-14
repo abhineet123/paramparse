@@ -224,8 +224,8 @@ def _processArgsFromParser(obj, args):
         _assignArg(obj, key_parts, 0, val)
 
 
-def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', prog='',
-            usage='%(prog)s [options]', allow_unknown=0):
+def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
+            prog='', usage='%(prog)s [options]', allow_unknown=0):
     """
 
     :param obj:
@@ -259,7 +259,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', prog='',
                 cfg = arg_val
 
         if not cfg_root:
-            cfg_root = getattr(obj, 'cfg', cfg_root)
+            cfg_root = getattr(obj, 'cfg_root', cfg_root)
+
+        if not cfg_ext:
+            cfg_ext = getattr(obj, 'cfg_ext', cfg_ext)
 
         if not cfg and hasattr(obj, 'cfg'):
             obj.cfg = cfg
@@ -269,6 +272,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', prog='',
 
         args_in = []
         for _cfg in cfg:
+
+            if cfg_ext:
+                _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
                 _cfg = os.path.join(cfg_root, _cfg)
             if os.path.isfile(_cfg):
