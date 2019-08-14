@@ -261,17 +261,24 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
         if not cfg and hasattr(obj, 'cfg'):
             obj.cfg = cfg
 
+        if isinstance(cfg, str):
+            cfg = (cfg, )
+
         args_in = []
-        if os.path.isfile(cfg):
-            print('Reading parameters from {:s}'.format(cfg))
-            file_args = open(cfg, 'r').readlines()
-            file_args = [arg.strip() for arg in file_args if arg.strip()]
-            # lines starting with # in the cfg file are regarded as comments and thus ignored
-            file_args = ['--{:s}'.format(arg) for arg in file_args if not arg.startswith('#')]
-            args_in += file_args
-            # command line arguments override those in the cfg file
+        for _cfg in cfg:
+            if os.path.isfile(_cfg):
+                print('Reading parameters from {:s}'.format(_cfg))
+                file_args = open(_cfg, 'r').readlines()
+                file_args = [arg.strip() for arg in file_args if arg.strip()]
+                # lines starting with # in the cfg file are regarded as comments and thus ignored
+                file_args = ['--{:s}'.format(arg) for arg in file_args if not arg.startswith('#')]
+                args_in += file_args
+
+                # reset prefix before next cfg file
+                args_in.append('@')
 
         help_mode = ''
+        # command line arguments override those in the cfg file
         if cmd:
             # reset prefix before command line args
             args_in.append('@')
