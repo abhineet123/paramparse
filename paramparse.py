@@ -251,12 +251,17 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     _addParamsToParser(parser, obj)
 
     if args_in is None:
+        argv_id = 1
+
         if not cfg:
-            cfg = getattr(obj, 'cfg', cfg)
             # check for cfg files specified at command line
             if cmd and len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
                 _, arg_val = sys.argv[1].split('=')
                 cfg = arg_val
+                argv_id += 1
+                if hasattr(obj, 'cfg'):
+                    obj.cfg = cfg
+            cfg = getattr(obj, 'cfg', cfg)
 
         if not cfg_root:
             cfg_root = getattr(obj, 'cfg_root', cfg_root)
@@ -267,12 +272,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if not cfg and hasattr(obj, 'cfg'):
             obj.cfg = cfg
 
-        if isinstance(cfg, str):
-            cfg = (cfg, )
+        if ',' not in cfg:
+            cfg = '{},'.format(cfg)
+
+        cfg = cfg.split(',')
 
         args_in = []
         for _cfg in cfg:
-
             if cfg_ext:
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
@@ -293,7 +299,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if cmd:
             # reset prefix before command line args
             args_in.append('@')
-            cmd_args = list(sys.argv[1:])
+            cmd_args = list(sys.argv[argv_id:])
             if cmd_args[0] in ('--h', '-h', '--help'):
                 # args_in.insert(0, cmd_args[0])
                 help_mode = cmd_args[0]
