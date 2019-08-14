@@ -375,7 +375,7 @@ def fromParser(parser, class_name='Params'):
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if '--cfg' not in all_params_names:
-        out_text += "\t\tself.cfg = ''\n"
+        out_text += "\t\tself.cfg = ('', )\n"
     help_text = '\t\tself.help = {\n'
 
     if parser.description is not None:
@@ -438,7 +438,7 @@ def fromDict(param_dict, class_name='Params'):
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if 'cfg' not in all_params_names:
-        out_text += "\t\tself.cfg = ''\n"
+        out_text += "\t\tself.cfg = ('', )\n"
     help_text = '\t\tself.help = {\n'
     doc_text = '\t"""\n'
 
