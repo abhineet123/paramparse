@@ -232,6 +232,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', prog='',
     :param list | None args_in:
     :param str cmd:
     :param str cfg:
+    :param str cfg_root:
     :param str prog:
     :param str | None usage:
     :return:
