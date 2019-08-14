@@ -224,7 +224,7 @@ def _processArgsFromParser(obj, args):
         _assignArg(obj, key_parts, 0, val)
 
 
-def process(obj, args_in=None, cmd=True, cfg='', prog='',
+def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', prog='',
             usage='%(prog)s [options]', allow_unknown=0):
     """
 
@@ -251,12 +251,14 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
 
     if args_in is None:
         if not cfg:
-            if hasattr(obj, 'cfg'):
-                cfg = getattr(obj, 'cfg')
-            # check for a custom cfg file specified at command line
+            cfg = getattr(obj, 'cfg', cfg)
+            # check for cfg files specified at command line
             if cmd and len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
                 _, arg_val = sys.argv[1].split('=')
                 cfg = arg_val
+
+        if not cfg_root:
+            cfg_root = getattr(obj, 'cfg', cfg_root)
 
         if not cfg and hasattr(obj, 'cfg'):
             obj.cfg = cfg
@@ -266,6 +268,8 @@ def process(obj, args_in=None, cmd=True, cfg='', prog='',
 
         args_in = []
         for _cfg in cfg:
+            if cfg_root:
+                _cfg = os.path.join(cfg_root, _cfg)
             if os.path.isfile(_cfg):
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = open(_cfg, 'r').readlines()
