@@ -61,15 +61,17 @@ def strToTuple(val):
         val_list = tuple(range(*val_list))
         return val_list
     elif ':' in val:
-        inclusive_start = inclusive_end = 1
-        if val.endswith(')'):
-            val = val[:-1]
-            inclusive_end = 0
-        if val.startswith(')'):
-            val = val[1:]
-            inclusive_start = 0
+        # Try to parse the string as a range specification
         try:
-            _temp = [float(k) for k in val.split(':')]
+            _val = val
+            inclusive_start = inclusive_end = 1
+            if _val.endswith(')'):
+                _val = _val[:-1]
+                inclusive_end = 0
+            if val.startswith(')'):
+                _val = _val[1:]
+                inclusive_start = 0
+            _temp = [float(k) for k in _val.split(':')]
             if len(_temp) == 3:
                 _step = _temp[2]
             else:
