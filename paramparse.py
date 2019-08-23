@@ -5,6 +5,7 @@ import inspect
 import argparse
 from ast import literal_eval
 from pprint import pformat
+import numpy as np
 
 try:
     import cPickle as pickle
@@ -59,9 +60,48 @@ def strToTuple(val):
         val_list = [int(x) for x in val_list]
         val_list = tuple(range(*val_list))
         return val_list
-    elif ',' not in val:
+    elif ':' in val:
+        inclusive_start = inclusive_end = 1
+        if val.endswith(')'):
+            val = val[:-1]
+            inclusive_end = 0
+        if val.startswith(')'):
+            val = val[1:]
+            inclusive_start = 0
+        try:
+            _temp = [float(k) for k in val.split(':')]
+            if len(_temp) == 3:
+                _step = _temp[2]
+            else:
+                _step = 1.0
+            if inclusive_end:
+                _temp[1] += _step
+            if not inclusive_start:
+                _temp[0] += _step
+            return tuple(np.arange(*_temp))
+        except BaseException as e:
+            pass
+    if ',' not in val:
         val = '{},'.format(val)
-    return literal_eval(val)
+
+    if any(k in val for k in ('(', '{', '[')):
+        # nested tuple
+        return literal_eval(val)
+    else:
+        arg_vals = [x for x in val.split(',') if x]
+        arg_vals_parsed = []
+        for _val in arg_vals:
+            try:
+                _val_parsed = int(_val)
+            except ValueError:
+                try:
+                    _val_parsed = float(_val)
+                except ValueError:
+                    _val_parsed = _val
+            if _val_parsed == '__n__':
+                _val_parsed = ''
+            arg_vals_parsed.append(_val_parsed)
+        return arg_vals_parsed
 
 
 def save(obj, dir_name, out_name='params.bin'):
