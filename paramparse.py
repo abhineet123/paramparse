@@ -408,7 +408,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     return args_in
 
 
-def fromParser(parser, class_name='Params'):
+def fromParser(parser, class_name='Params', allow_none_default=1):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -445,20 +445,33 @@ def fromParser(parser, class_name='Params'):
         _help = _param.help
 
         default = _param.default
+        _param_type = _param.type
         if default is None:
-            raise IOError('None default found for param: {}'.format(__name))
-
-        elif isinstance(default, str):
-            default_str = "'{}'".format(_param.default)
+            if _param_type is None:
+                raise IOError('Both type and default are None for params {}'.format(__name))
+            msg = 'None default found for param: {}'.format(__name)
+            if allow_none_default:
+                print(msg)
+                if _param_type is str:
+                    default_str = "''"
+                else:
+                    default_str = "{}".format(_param_type())
+            else:
+                raise IOError(msg)
         else:
-            default_str = '{}'.format(_param.default)
+            if _param_type is None:
+                _param_type = type(_param.default)
+            if _param_type is str:
+                default_str = "'{}'".format(_param.default)
+            else:
+                default_str = '{}'.format(_param.default)
 
         var_name = __name.replace('-', '_').replace(' ', '_')
 
         out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
         help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
 
-        doc_text += '\t:param {} {}: {}\n'.format(type(_param.default).__name__, var_name, _help)
+        doc_text += '\t:param {} {}: {}\n'.format(_param_type.__name__, var_name, _help)
 
     help_text += "\t\t}"
     doc_text += '\t"""\n'
