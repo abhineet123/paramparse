@@ -189,7 +189,9 @@ def helpFromDocs(obj, member):
 
     return _help
 
+
 _supported_types = (int, bool, float, str, tuple, list, dict, tuple, list, dict)
+
 
 def typeFromDocs(obj, member):
     doc = inspect.getdoc(obj)
@@ -206,7 +208,7 @@ def typeFromDocs(obj, member):
     if not relevant_lines:
         return None
 
-    if len(relevant_lines)>1:
+    if len(relevant_lines) > 1:
         print('Multiple matching docstring lines for {}:\n{}'.format(member, pformat(relevant_lines)))
         return None
 
@@ -220,6 +222,7 @@ def typeFromDocs(obj, member):
         return relevant_templs[0][1]
 
     return None
+
 
 def _addParamsToParser(parser, obj, root_name='', obj_name=''):
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
@@ -483,26 +486,45 @@ def fromParser(parser, class_name='Params', allow_none_default=1):
         _help = _param.help
 
         default = _param.default
-        _param_type = _param.type
+        nargs = _param.nargs
+
+        if isinstance(nargs, str):
+            _param_type = list
+        else:
+            _param_type = _param.type
+
         if default is None:
             if _param_type is None:
                 raise IOError('Both type and default are None for params {}'.format(__name))
+
             msg = 'None default found for param: {}'.format(__name)
             if allow_none_default:
                 print(msg)
-                if _param_type is str:
-                    default_str = "''"
+
+                if _param_type in (list, tuple):
+                    default_str = '[None, ]'
                 else:
-                    default_str = "{}".format(_param_type())
+                    default_str = 'None'
+                # if _param_type is str:
+                #     default_str = ""
+                # else:
+                #     default_str = "{}".format(_param_type())
             else:
                 raise IOError(msg)
         else:
             if _param_type is None:
                 _param_type = type(_param.default)
-            if _param_type is str:
-                default_str = "'{}'".format(_param.default)
+
+            if _param_type in (list, tuple):
+                if _param_type is str:
+                    default_str = "['{}, ]'".format(_param.default)
+                else:
+                    default_str = '[{} ,]'.format(_param.default)
             else:
-                default_str = '{}'.format(_param.default)
+                if _param_type is str:
+                    default_str = "'{}'".format(_param.default)
+                else:
+                    default_str = '{}'.format(_param.default)
 
         var_name = __name.replace('-', '_').replace(' ', '_')
 
