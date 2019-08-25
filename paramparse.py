@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import json
 import inspect
 import argparse
@@ -188,6 +189,37 @@ def helpFromDocs(obj, member):
 
     return _help
 
+_supported_types = (int, bool, float, str, tuple, list, dict, tuple, list, dict)
+
+def typeFromDocs(obj, member):
+    doc = inspect.getdoc(obj)
+    if doc is None:
+        return None
+
+    doc_lines = doc.splitlines()
+    if not doc_lines:
+        return None
+
+    templs = [(':param {} {}: '.format(k.__name__, member), k) for k in _supported_types]
+    relevant_lines = [k for k in doc_lines if any(k.startswith(templ[0]) for templ in templs)]
+
+    if not relevant_lines:
+        return None
+
+    if len(relevant_lines)>1:
+        print('Multiple matching docstring lines for {}:\n{}'.format(member, pformat(relevant_lines)))
+        return None
+
+    relevant_line = relevant_lines[0]
+    if relevant_line:
+        relevant_templs = [templ for templ in templs if relevant_line.startswith(templ[0])]
+        if len(relevant_lines) > 1:
+            print('Multiple matching templates for {} with docstring line {}:\n{}'.format(
+                member, relevant_line, pformat(relevant_templs)))
+            return None
+        return relevant_templs[0][1]
+
+    return None
 
 def _addParamsToParser(parser, obj, root_name='', obj_name=''):
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
@@ -202,8 +234,14 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
             continue
         default_val = getattr(obj, member)
         if default_val is None:
-            continue
-        if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
+            member_type = typeFromDocs(obj, member)
+            if member_type is None:
+                print('No type found in docstring for {} with None default'.format(member))
+                continue
+        else:
+            member_type = type(default_val)
+
+        if member_type in (int, bool, float, str, tuple, list, dict):
             if root_name:
                 member_param_name = '{:s}.{:s}'.format(root_name, member)
             else:
@@ -213,14 +251,14 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
             else:
                 _help = helpFromDocs(obj, member)
 
-            if isinstance(default_val, (tuple, list)):
+            if member_type in (tuple, list):
                 parser.add_argument('--{:s}'.format(member_param_name), type=strToTuple,
                                     default=default_val, help=_help, metavar='')
-            elif isinstance(default_val, dict):
+            elif member_type is dict:
                 parser.add_argument('--{:s}'.format(member_param_name), type=json.loads, default=default_val,
                                     help=_help, metavar='')
             else:
-                parser.add_argument('--{:s}'.format(member_param_name), type=type(default_val), default=default_val,
+                parser.add_argument('--{:s}'.format(member_param_name), type=member_type, default=default_val,
                                     help=_help, metavar='')
         else:
             # parameter is itself an instance of some other parmeter class so its members must
