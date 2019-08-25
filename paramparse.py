@@ -239,8 +239,9 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
         if default_val is None:
             member_type = typeFromDocs(obj, member)
             if member_type is None:
-                print('No type found in docstring for {} with None default'.format(member))
+                print('No type found in docstring for param {} with default as None'.format(member))
                 continue
+            print('Deduced type {} from docstring for param {} with default as None'.format(member_type, member))
         else:
             member_type = type(default_val)
 
@@ -269,13 +270,21 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
             _addParamsToParser(parser, getattr(obj, member), root_name, member)
 
 
-def _assignArg(obj, arg, _id, val):
+def _assignArg(obj, arg, _id, val, all_params, parent_name):
     if _id >= len(arg):
         print('Invalid arg: ', arg)
         return
+
     _arg = arg[_id]
     obj_attr = getattr(obj, _arg)
-    if isinstance(obj_attr, (int, bool, float, str, list, tuple, dict)):
+    obj_attr_name = '{}.{}'.format(parent_name, _arg) if parent_name else _arg
+    if obj_attr is None:
+        _key = '--{}'.format(obj_attr_name)
+        obj_attr_type = all_params[_key].type
+    else:
+        obj_attr_type = type(obj_attr)
+
+    if obj_attr_type in _supported_types:
         if val == '#' or val == '__n__':
             if isinstance(obj_attr, str):
                 # empty string
@@ -293,18 +302,25 @@ def _assignArg(obj, arg, _id, val):
     else:
         # parameter is itself an instance of some other parameter class so its members must
         # be processed recursively
-        _assignArg(obj_attr, arg, _id + 1, val)
+        _assignArg(obj_attr, arg, _id + 1, val, all_params, obj_attr_name)
 
 
-def _processArgsFromParser(obj, args):
+def _processArgsFromParser(obj, args, parser):
     # arg_prefix = ''
     # if hasattr(obj, 'arg_prefix'):
     #     arg_prefix = obj.arg_prefix
+
+    optionals = parser._optionals._option_string_actions
+    positionals = parser._positionals._option_string_actions
+
+    all_params = optionals.copy()
+    all_params.update(positionals)
+
     members = vars(args)
     for key in members.keys():
         val = members[key]
         key_parts = key.split('.')
-        _assignArg(obj, key_parts, 0, val)
+        _assignArg(obj, key_parts, 0, val, all_params, '')
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
@@ -383,7 +399,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             # reset prefix before command line args
             args_in.append('@')
             cmd_args = list(sys.argv[argv_id:])
-            if cmd_args[0] in ('--h', '-h', '--help'):
+            if cmd_args and cmd_args[0] in ('--h', '-h', '--help'):
                 # args_in.insert(0, cmd_args[0])
                 help_mode = cmd_args[0]
                 cmd_args = cmd_args[1:]
@@ -441,7 +457,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             print('Unknown arguments found:\n{}'.format(pformat(unknown)))
     else:
         args = parser.parse_args(args_in)
-    _processArgsFromParser(obj, args)
+    _processArgsFromParser(obj, args, parser)
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)
