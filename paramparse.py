@@ -468,7 +468,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
 
 def fromParser(parser, class_name='Params', allow_none_default=1,
-               add_doc=True, add_help=True):
+               add_doc=True, add_help=True, copy_to_clipboard=False):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -567,24 +567,24 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
 
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    out_fname = '{}.py'.format(class_name)
+    if copy_to_clipboard:
+        try:
+            import pyperclip
 
-    out_path = os.path.abspath(out_fname)
-
-    print('Writing output to {}'.format(out_path))
-    with open(out_path, 'w') as fid:
-        fid.write(out_text)
-
-    try:
-        import pyperclip
-
-        pyperclip.copy(out_text)
-        spam = pyperclip.paste()
-    except BaseException as e:
-        print('Copying to clipboard failed: {}'.format(e))
+            pyperclip.copy(out_text)
+            spam = pyperclip.paste()
+        except BaseException as e:
+            print('Copying to clipboard failed: {}'.format(e))
+    else:
+        out_fname = '{}.py'.format(class_name)
+        out_path = os.path.abspath(out_fname)
+        print('Writing output to {}'.format(out_path))
+        with open(out_path, 'w') as fid:
+            fid.write(out_text)
 
 
-def fromDict(param_dict, class_name='Params', add_doc=True, add_help=True):
+def fromDict(param_dict, class_name='Params',
+             add_doc=True, add_help=True, copy_to_clipboard=False):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -631,21 +631,20 @@ def fromDict(param_dict, class_name='Params', add_doc=True, add_help=True):
     out_text = header_text + out_text
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    out_fname = '{}.py'.format(class_name)
+    if copy_to_clipboard:
+        try:
+            import pyperclip
 
-    out_path = os.path.abspath(out_fname)
-
-    print('Writing output to {}'.format(out_path))
-    with open(out_path, 'w') as fid:
-        fid.write(out_text)
-
-    try:
-        import pyperclip
-
-        pyperclip.copy(out_text)
-        spam = pyperclip.paste()
-    except BaseException as e:
-        print('Copying to clipboard failed: {}'.format(e))
+            pyperclip.copy(out_text)
+            spam = pyperclip.paste()
+        except BaseException as e:
+            print('Copying to clipboard failed: {}'.format(e))
+    else:
+        out_fname = '{}.py'.format(class_name)
+        out_path = os.path.abspath(out_fname)
+        print('Writing output to {}'.format(out_path))
+        with open(out_path, 'w') as fid:
+            fid.write(out_text)
 
 
 if __name__ == '__main__':
