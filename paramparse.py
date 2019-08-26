@@ -467,7 +467,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     return args_in
 
 
-def fromParser(parser, class_name='Params', allow_none_default=1):
+def fromParser(parser, class_name='Params', allow_none_default=1,
+               add_doc=True, add_help=True):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -556,7 +557,14 @@ def fromParser(parser, class_name='Params', allow_none_default=1):
 
     out_text += help_text
 
-    out_text = header_text + doc_text + out_text
+    if add_help:
+        out_text += help_text
+
+    if add_doc:
+        out_text = doc_text + out_text
+
+    out_text = header_text + out_text
+
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
     out_fname = '{}.py'.format(class_name)
@@ -568,7 +576,7 @@ def fromParser(parser, class_name='Params', allow_none_default=1):
         fid.write(out_text)
 
 
-def fromDict(param_dict, class_name='Params'):
+def fromDict(param_dict, class_name='Params', add_doc=True, add_help=True):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -606,9 +614,13 @@ def fromDict(param_dict, class_name='Params'):
     help_text += "\t\t}"
     doc_text += '\t"""\n'
 
-    out_text += help_text
+    if add_help:
+        out_text += help_text
 
-    out_text = header_text + doc_text + out_text
+    if add_doc:
+        out_text = doc_text + out_text
+
+    out_text = header_text + out_text
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
     out_fname = '{}.py'.format(class_name)
