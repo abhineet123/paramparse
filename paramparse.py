@@ -654,10 +654,10 @@ def fromDict(param_dict, class_name='Params',
             fid.write(out_text)
 
 
-def fromFunction(function, class_name='Params',
+def fromFunction(fn, class_name='Params',
                  add_cfg=True, add_doc=True, add_help=True,
                  copy_to_clipboard=False):
-    args, varargs, varkw, defaults = inspect.getargspec(function)
+    args, varargs, varkw, defaults = inspect.getargspec(fn)
     n_defaults = len(defaults)
     args_dict = dict(zip(args[-n_defaults:], defaults))
     fromDict(args_dict, class_name, add_cfg=add_cfg,
