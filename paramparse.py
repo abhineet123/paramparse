@@ -584,7 +584,8 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
 
 
 def fromDict(param_dict, class_name='Params',
-             add_doc=True, add_help=True, copy_to_clipboard=False):
+             add_cfg=True, add_doc=True, add_help=True,
+             copy_to_clipboard=False):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -598,7 +599,7 @@ def fromDict(param_dict, class_name='Params',
 
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
-    if 'cfg' not in all_params_names:
+    if add_cfg and 'cfg' not in all_params_names:
         out_text += "\t\tself.cfg = ('', )\n"
     help_text = '\t\tself.help = {\n'
     doc_text = '\t"""\n'
