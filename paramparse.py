@@ -252,6 +252,8 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
                 member_param_name = '{:s}'.format(member)
             if hasattr(obj, 'help') and member in obj.help:
                 _help = obj.help[member]
+                if not isinstance(_help, str):
+                    _help = pformat(_help)
             else:
                 _help = helpFromDocs(obj, member)
 
