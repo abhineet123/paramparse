@@ -575,6 +575,14 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
     with open(out_path, 'w') as fid:
         fid.write(out_text)
 
+    try:
+        import pyperclip
+
+        pyperclip.copy(out_text)
+        spam = pyperclip.paste()
+    except BaseException as e:
+        print('Copying to clipboard failed: {}'.format(e))
+
 
 def fromDict(param_dict, class_name='Params', add_doc=True, add_help=True):
     """
@@ -630,6 +638,14 @@ def fromDict(param_dict, class_name='Params', add_doc=True, add_help=True):
     print('Writing output to {}'.format(out_path))
     with open(out_path, 'w') as fid:
         fid.write(out_text)
+
+    try:
+        import pyperclip
+
+        pyperclip.copy(out_text)
+        spam = pyperclip.paste()
+    except BaseException as e:
+        print('Copying to clipboard failed: {}'.format(e))
 
 
 if __name__ == '__main__':
