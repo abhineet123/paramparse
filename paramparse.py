@@ -575,6 +575,9 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
             spam = pyperclip.paste()
         except BaseException as e:
             print('Copying to clipboard failed: {}'.format(e))
+        else:
+            print('Class definition copied to clipboard')
+
     else:
         out_fname = '{}.py'.format(class_name)
         out_path = os.path.abspath(out_fname)
@@ -640,6 +643,9 @@ def fromDict(param_dict, class_name='Params',
             spam = pyperclip.paste()
         except BaseException as e:
             print('Copying to clipboard failed: {}'.format(e))
+        else:
+            print('Class definition copied to clipboard')
+
     else:
         out_fname = '{}.py'.format(class_name)
         out_path = os.path.abspath(out_fname)
