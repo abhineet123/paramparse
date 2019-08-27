@@ -468,7 +468,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
 
 def fromParser(parser, class_name='Params', allow_none_default=1,
-               add_doc=True, add_help=True, copy_to_clipboard=False):
+               add_doc=True, add_help=True, to_clipboard=False):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -567,7 +567,7 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
 
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    if copy_to_clipboard:
+    if to_clipboard:
         try:
             import pyperclip
 
@@ -588,7 +588,7 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
 
 def fromDict(param_dict, class_name='Params',
              add_cfg=True, add_doc=True, add_help=True,
-             copy_to_clipboard=False):
+             to_clipboard=False):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -635,7 +635,7 @@ def fromDict(param_dict, class_name='Params',
     out_text = header_text + out_text
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
 
-    if copy_to_clipboard:
+    if to_clipboard:
         try:
             import pyperclip
 
@@ -656,13 +656,13 @@ def fromDict(param_dict, class_name='Params',
 
 def fromFunction(fn, class_name='Params',
                  add_cfg=True, add_doc=True, add_help=True,
-                 copy_to_clipboard=False):
+                 to_clipboard=False):
     args, varargs, varkw, defaults = inspect.getargspec(fn)
     n_defaults = len(defaults)
     args_dict = dict(zip(args[-n_defaults:], defaults))
     fromDict(args_dict, class_name, add_cfg=add_cfg,
              add_doc=add_doc, add_help=add_help,
-             copy_to_clipboard=copy_to_clipboard)
+             to_clipboard=to_clipboard)
 
 
 if __name__ == '__main__':
