@@ -450,9 +450,15 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _name = '{}.{}'.format(pf, _name)
             _args_in.append('--{}={}'.format(_name, _val))
         args_in = _args_in
+
+        _args_in = []
+        for _arg_str in args_in:
+            _name, _val = _arg_str.split('=')
+            if _val and not _val.startswith('#'):
+                _args_in.append(_arg_str)
+        args_in = _args_in
         if help_mode:
             args_in.insert(0, help_mode)
-
     if allow_unknown:
         args, unknown = parser.parse_known_args(args_in)
         if unknown:
