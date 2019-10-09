@@ -561,8 +561,6 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
     help_text += "\t\t}"
     doc_text += '\t"""\n'
 
-    out_text += help_text
-
     if add_help:
         out_text += help_text
 
