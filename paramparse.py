@@ -14,7 +14,7 @@ except ImportError:
     import pickle
 
 
-def scalarToString(val, add_quotes=False):
+def scalar_to_string(val, add_quotes=False):
     if isinstance(val, (int, bool)):
         return '{:d}'.format(int(val))
     elif isinstance(val, float):
@@ -28,34 +28,34 @@ def scalarToString(val, add_quotes=False):
     return None
 
 
-def tupleToString(vals):
+def tuple_to_string(vals):
     _str = ''
     for val in vals:
         if isinstance(val, (int, bool, float, str)):
-            _str = '{:s}{:s},'.format(_str, scalarToString(val, True))
+            _str = '{:s}{:s},'.format(_str, scalar_to_string(val, True))
         elif isinstance(val, (tuple, list)):
-            _str = '{:s}{:s},'.format(_str, tupleToString(val))
+            _str = '{:s}{:s},'.format(_str, tuple_to_string(val))
         elif isinstance(val, dict):
-            _str = '{:s}{:s},'.format(_str, dictToString(val))
+            _str = '{:s}{:s},'.format(_str, dict_to_string(val))
     return '({:s})'.format(_str)
 
 
-def dictToString(vals):
+def dict_to_string(vals):
     _str = '{{'
     for key in vals.keys():
         val = vals[key]
-        key_str = scalarToString(key)
+        key_str = scalar_to_string(key)
         if isinstance(val, (int, bool, float, str)):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, scalarToString(val))
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, scalar_to_string(val))
         elif isinstance(val, (tuple, list)):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, tupleToString(val))
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, tuple_to_string(val))
         elif isinstance(val, dict):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, dictToString(val))
+            _str = '{:s}{:s}:{:s},'.format(_str, key_str, dict_to_string(val))
     _str += '}}'
     return _str
 
 
-def strToTuple(val):
+def str_to_tuple(val):
     if val.startswith('range('):
         val_list = val[6:].replace(')', '').split(',')
         val_list = [int(x) for x in val_list]
@@ -116,7 +116,7 @@ def load(obj, dir_name, prefix='', out_name='params.bin'):
     load_path = os.path.join(dir_name, out_name)
     params = pickle.load(open(load_path, "rb"))
     missing_params = []
-    _recursiveLoad(obj, params, prefix, missing_params)
+    _recursive_load(obj, params, prefix, missing_params)
     if missing_params:
         print('Missing loaded parameters found:\n{}'.format(pformat(missing_params)))
 
@@ -124,7 +124,7 @@ def load(obj, dir_name, prefix='', out_name='params.bin'):
 def write(obj, dir_name, prefix='', out_name='params.cfg'):
     save_path = os.path.join(dir_name, out_name)
     save_fid = open(save_path, "w")
-    _recursiveWrite(obj, prefix, save_fid)
+    _recursive_write(obj, prefix, save_fid)
 
 
 def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
@@ -137,7 +137,7 @@ def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
             usage=None, allow_unknown=allow_unknown)
 
 
-def _recursiveLoad(obj, loaded_obj, prefix, missing_params):
+def _recursive_load(obj, loaded_obj, prefix, missing_params):
     load_members = [attr for attr in dir(loaded_obj) if
                     not callable(getattr(loaded_obj, attr)) and not attr.startswith("__")]
     obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
@@ -151,10 +151,10 @@ def _recursiveLoad(obj, loaded_obj, prefix, missing_params):
         if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
             setattr(obj, member, load_val)
         else:
-            _recursiveLoad(default_val, load_val, member_name, missing_params)
+            _recursive_load(default_val, load_val, member_name, missing_params)
 
 
-def _recursiveWrite(obj, prefix, save_fid):
+def _recursive_write(obj, prefix, save_fid):
     obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
     for member in obj_members:
         if member == 'help':
@@ -162,16 +162,16 @@ def _recursiveWrite(obj, prefix, save_fid):
         member_val = getattr(obj, member)
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
         if isinstance(member_val, (int, bool, float, str)):
-            save_fid.write('{:s}={:s}\n'.format(member_name, scalarToString(member_val)))
+            save_fid.write('{:s}={:s}\n'.format(member_name, scalar_to_string(member_val)))
         elif isinstance(member_val, tuple):
-            save_fid.write('{:s}={:s}\n'.format(member_name, tupleToString(member_val)))
+            save_fid.write('{:s}={:s}\n'.format(member_name, tuple_to_string(member_val)))
         elif isinstance(member_val, dict):
-            save_fid.write('{:s}={:s}\n'.format(member_name, dictToString(member_val)))
+            save_fid.write('{:s}={:s}\n'.format(member_name, dict_to_string(member_val)))
         else:
-            _recursiveWrite(member_val, member_name, save_fid)
+            _recursive_write(member_val, member_name, save_fid)
 
 
-def helpFromDocs(obj, member):
+def help_from_docs(obj, member):
     _help = ''
     doc = inspect.getdoc(obj)
     if doc is None:
@@ -193,7 +193,7 @@ def helpFromDocs(obj, member):
 _supported_types = (int, bool, float, str, tuple, list, dict, tuple, list, dict)
 
 
-def typeFromDocs(obj, member):
+def type_from_docs(obj, member):
     doc = inspect.getdoc(obj)
     if doc is None:
         return None
@@ -224,7 +224,7 @@ def typeFromDocs(obj, member):
     return None
 
 
-def _addParamsToParser(parser, obj, root_name='', obj_name=''):
+def _add_params_to_parser(parser, obj, root_name='', obj_name=''):
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
                      and not attr.startswith("__")])
     if obj_name:
@@ -237,7 +237,7 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
             continue
         default_val = getattr(obj, member)
         if default_val is None:
-            member_type = typeFromDocs(obj, member)
+            member_type = type_from_docs(obj, member)
             if member_type is None:
                 print('No type found in docstring for param {} with default as None'.format(member))
                 continue
@@ -255,10 +255,10 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
                 if not isinstance(_help, str):
                     _help = pformat(_help)
             else:
-                _help = helpFromDocs(obj, member)
+                _help = help_from_docs(obj, member)
 
             if member_type in (tuple, list):
-                parser.add_argument('--{:s}'.format(member_param_name), type=strToTuple,
+                parser.add_argument('--{:s}'.format(member_param_name), type=str_to_tuple,
                                     default=default_val, help=_help, metavar='')
             elif member_type is dict:
                 parser.add_argument('--{:s}'.format(member_param_name), type=json.loads, default=default_val,
@@ -269,10 +269,10 @@ def _addParamsToParser(parser, obj, root_name='', obj_name=''):
         else:
             # parameter is itself an instance of some other parmeter class so its members must
             # be processed recursively
-            _addParamsToParser(parser, getattr(obj, member), root_name, member)
+            _add_params_to_parser(parser, getattr(obj, member), root_name, member)
 
 
-def _assignArg(obj, arg, _id, val, all_params, parent_name):
+def _assign_arg(obj, arg, _id, val, all_params, parent_name):
     if _id >= len(arg):
         print('Invalid arg: ', arg)
         return
@@ -304,10 +304,10 @@ def _assignArg(obj, arg, _id, val, all_params, parent_name):
     else:
         # parameter is itself an instance of some other parameter class so its members must
         # be processed recursively
-        _assignArg(obj_attr, arg, _id + 1, val, all_params, obj_attr_name)
+        _assign_arg(obj_attr, arg, _id + 1, val, all_params, obj_attr_name)
 
 
-def _processArgsFromParser(obj, args, parser):
+def _process_args_from_parser(obj, args, parser):
     # arg_prefix = ''
     # if hasattr(obj, 'arg_prefix'):
     #     arg_prefix = obj.arg_prefix
@@ -322,7 +322,7 @@ def _processArgsFromParser(obj, args, parser):
     for key in members.keys():
         val = members[key]
         key_parts = key.split('.')
-        _assignArg(obj, key_parts, 0, val, all_params, '')
+        _assign_arg(obj, key_parts, 0, val, all_params, '')
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
@@ -349,7 +349,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         arg_dict['description'] = obj.help['__desc__']
 
     parser = argparse.ArgumentParser(**arg_dict)
-    _addParamsToParser(parser, obj)
+    _add_params_to_parser(parser, obj)
 
     if args_in is None:
         argv_id = 1
@@ -465,7 +465,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             print('Unknown arguments found:\n{}'.format(pformat(unknown)))
     else:
         args = parser.parse_args(args_in)
-    _processArgsFromParser(obj, args, parser)
+    _process_args_from_parser(obj, args, parser)
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)
@@ -473,8 +473,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     return args_in
 
 
-def fromParser(parser, class_name='Params', allow_none_default=1,
-               add_doc=True, add_help=True, to_clipboard=False):
+def from_parser(parser, class_name='Params', allow_none_default=1,
+                add_doc=True, add_help=True, to_clipboard=False):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -590,9 +590,9 @@ def fromParser(parser, class_name='Params', allow_none_default=1,
             fid.write(out_text)
 
 
-def fromDict(param_dict, class_name='Params',
-             add_cfg=True, add_doc=True, add_help=True,
-             to_clipboard=False):
+def from_dict(param_dict, class_name='Params',
+              add_cfg=True, add_doc=True, add_help=True,
+              to_clipboard=False):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -658,15 +658,15 @@ def fromDict(param_dict, class_name='Params',
             fid.write(out_text)
 
 
-def fromFunction(fn, class_name='Params',
-                 add_cfg=True, add_doc=True, add_help=True,
-                 to_clipboard=False):
+def from_function(fn, class_name='Params',
+                  add_cfg=True, add_doc=True, add_help=True,
+                  to_clipboard=False):
     args, varargs, varkw, defaults = inspect.getargspec(fn)
     n_defaults = len(defaults)
     args_dict = dict(zip(args[-n_defaults:], defaults))
-    fromDict(args_dict, class_name, add_cfg=add_cfg,
-             add_doc=add_doc, add_help=add_help,
-             to_clipboard=to_clipboard)
+    from_dict(args_dict, class_name, add_cfg=add_cfg,
+              add_doc=add_doc, add_help=add_help,
+              to_clipboard=to_clipboard)
 
 
 if __name__ == '__main__':
@@ -680,4 +680,4 @@ if __name__ == '__main__':
 
     if not isinstance(_dict, dict):
         raise IOError('Clipboard contents do not form a valid dict:\n{}'.format(in_txt))
-    fromDict(_dict)
+    from_dict(_dict)

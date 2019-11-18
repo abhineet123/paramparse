@@ -41,7 +41,7 @@ parser.add_argument('--ckpt_save_iter', default=10000, type=int, help='checkpoin
 parser.add_argument('--output_dir', default='outputs', type=str, help='output directory')
 parser.add_argument('--output_save', default=True, type=bool, help='whether to save traverse results')
 
-paramparse.fromParser(parser, 'FromParserDemoParams')
+paramparse.from_parser(parser, 'FromParserDemoParams')
 
 dict_params = {
         'seq_paths': '',
@@ -71,4 +71,4 @@ dict_params = {
         'labels': [],
     }
 
-paramparse.fromDict(dict_params, 'FromDictDemoParams')
+paramparse.from_dict(dict_params, 'FromDictDemoParams')
