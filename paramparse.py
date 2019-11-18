@@ -55,6 +55,10 @@ def dict_to_string(vals):
     return _str
 
 
+def strip_quotes(val):
+    return val.strip("\'").strip('\"')
+
+
 def str_to_tuple(val):
     if val.startswith('range('):
         val_list = val[6:].replace(')', '').split(',')
@@ -263,6 +267,9 @@ def _add_params_to_parser(parser, obj, root_name='', obj_name=''):
             elif member_type is dict:
                 parser.add_argument('--{:s}'.format(member_param_name), type=json.loads, default=default_val,
                                     help=_help, metavar='')
+            elif member_type is str:
+                parser.add_argument('--{:s}'.format(member_param_name), type=strip_quotes, default=default_val,
+                                    help=_help, metavar='')
             else:
                 parser.add_argument('--{:s}'.format(member_param_name), type=member_type, default=default_val,
                                     help=_help, metavar='')
@@ -334,8 +341,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     :param str cmd:
     :param str cfg:
     :param str cfg_root:
+    :param str cfg_ext:
     :param str prog:
     :param str | None usage:
+    :param int allow_unknown:
     :return:
     """
     arg_dict = {}
