@@ -406,7 +406,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     try:
                         _cfg_sec_id = sections.index(_cfg_sec)
                     except:
-                        raise IOError('Section {} not found in cfg file {} with sections: \n{}'.format(
+                        raise IOError('Section {} not found in cfg file {} with sections:\n{}'.format(
                             _cfg_sec, _cfg, sections))
                     else:
                         line_start_id = section_ids[_cfg_sec_id]
