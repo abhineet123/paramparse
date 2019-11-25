@@ -392,6 +392,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             _cfg_sec = ''
             if ':' in _cfg:
                 _cfg, _cfg_sec = _cfg.split(':')
+                if ',' in _cfg_sec:
+                    _cfg_sec = _cfg_sec.split(',')
+                else:
+                    _cfg_sec = [_cfg_sec, ]
+
             if cfg_ext:
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
@@ -400,18 +405,22 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = open(_cfg, 'r').readlines()
                 if _cfg_sec:
-                    print('Reading only from section {:s}'.format(_cfg_sec))
+                    print('Reading only from section(s):\n{}'.format(_cfg_sec))
                     _sections = [(k.lstrip('##').strip(), i) for i, k in enumerate(file_args) if k.startswith('##')]
                     sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
-                    try:
-                        _cfg_sec_id = sections.index(_cfg_sec)
-                    except:
-                        raise IOError('Section {} not found in cfg file {} with sections:\n{}'.format(
-                            _cfg_sec, _cfg, sections))
-                    else:
-                        line_start_id = section_ids[_cfg_sec_id]
-                        line_end_id = section_ids[_cfg_sec_id + 1] if _cfg_sec_id < len(sections) - 1 else len(file_args)
-                        file_args = file_args[line_start_id:line_end_id]
+                    _sec_args = []
+                    for _sec in _cfg_sec:
+                        try:
+                            _cfg_sec_id = sections.index(_sec)
+                        except:
+                            raise IOError('Section {} not found in cfg file {} with sections:\n{}'.format(
+                                _sec, _cfg, sections))
+                        else:
+                            line_start_id = section_ids[_cfg_sec_id]
+                            line_end_id = section_ids[_cfg_sec_id + 1] if _cfg_sec_id < len(sections) - 1 else len(file_args)
+                            _sec_args += file_args[line_start_id:line_end_id]
+
+                    file_args = _sec_args
 
                 file_args = [arg.strip() for arg in file_args if arg.strip()]
                 # lines starting with # in the cfg file are regarded as comments and thus ignored
