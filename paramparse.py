@@ -391,12 +391,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         for _cfg in cfg:
             _cfg_sec = ''
             if ':' in _cfg:
-                _cfg, _cfg_sec = _cfg.split(':')
-                if ',' in _cfg_sec:
-                    _cfg_sec = _cfg_sec.split(',')
-                else:
-                    _cfg_sec = [_cfg_sec, ]
-
+                _cfg = _cfg.split(':')
+                _cfg_sec = list(_cfg[1:])
+                _cfg = _cfg[0]
             if cfg_ext:
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
@@ -417,7 +414,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                 _sec, _cfg, sections))
                         else:
                             line_start_id = section_ids[_cfg_sec_id]
-                            line_end_id = section_ids[_cfg_sec_id + 1] if _cfg_sec_id < len(sections) - 1 else len(file_args)
+                            line_end_id = section_ids[_cfg_sec_id + 1] if _cfg_sec_id < len(sections) - 1 else len(
+                                file_args)
                             _sec_args += file_args[line_start_id:line_end_id]
 
                     file_args = _sec_args
