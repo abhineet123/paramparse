@@ -435,7 +435,6 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             file_args)
                         _sec_args += file_args[line_start_id:line_end_id]
 
-
                     file_args = _sec_args
 
                 file_args = [arg.strip() for arg in file_args if arg.strip()]
