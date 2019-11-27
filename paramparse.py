@@ -402,13 +402,24 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = open(_cfg, 'r').readlines()
                 if _cfg_sec:
+                    excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
+
                     _sections = [(k.lstrip('##').strip(), i) for i, k in enumerate(file_args) if k.startswith('##')]
-                    sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
+                    sections, section_ids = zip(*[(_sec, i) for _sec, i in _sections if _sec not in excluded_cfg_sec])
+                    # sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
+
+                    if excluded_cfg_sec:
+                        print('Excluding section(s):\n{}'.format(pformat(excluded_cfg_sec)))
+                        _cfg_sec = [_sec for _sec in _cfg_sec if _sec not in excluded_cfg_sec]
+                        if not _cfg_sec:
+                            _cfg_sec = sections
 
                     common_sections = [(section, section_ids[i]) for i, section in sections if
                                        section.startswith('__') and section.endswith('__')]
                     _cfg_sec += common_sections
-                    print('Reading only from section(s):\n{}'.format(_cfg_sec))
+
+                    if _cfg_sec:
+                        print('Reading from section(s):\n{}'.format(pformat(_cfg_sec)))
                     try:
                         _cfg_sec_ids = [sections.index(_sec) for _sec in _cfg_sec]
                     except ValueError:
@@ -423,6 +434,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
                             file_args)
                         _sec_args += file_args[line_start_id:line_end_id]
+
 
                     file_args = _sec_args
 
