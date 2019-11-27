@@ -414,7 +414,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         if not _cfg_sec:
                             _cfg_sec = sections
 
-                    common_sections = [(section, section_ids[i]) for i, section in sections if
+                    common_sections = [section for section in sections if
                                        section.startswith('__') and section.endswith('__')]
                     _cfg_sec += common_sections
 
