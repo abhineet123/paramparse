@@ -402,21 +402,27 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = open(_cfg, 'r').readlines()
                 if _cfg_sec:
-                    print('Reading only from section(s):\n{}'.format(_cfg_sec))
                     _sections = [(k.lstrip('##').strip(), i) for i, k in enumerate(file_args) if k.startswith('##')]
                     sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
+
+                    common_sections = [(section, section_ids[i]) for i, section in sections if
+                                       section.startswith('__') and section.endswith('__')]
+                    _cfg_sec += common_sections
+                    print('Reading only from section(s):\n{}'.format(_cfg_sec))
+                    try:
+                        _cfg_sec_ids = [sections.index(_sec) for _sec in _cfg_sec]
+                    except ValueError:
+                        raise IOError('One or more sections not found in cfg file {} with sections:\n{}'.format(
+                            _cfg, sections))
+
+                    _cfg_sec_iter = [(x, y) for y, x in sorted(zip(_cfg_sec_ids, _cfg_sec))]
+
                     _sec_args = []
-                    for _sec in _cfg_sec:
-                        try:
-                            _cfg_sec_id = sections.index(_sec)
-                        except:
-                            raise IOError('Section {} not found in cfg file {} with sections:\n{}'.format(
-                                _sec, _cfg, sections))
-                        else:
-                            line_start_id = section_ids[_cfg_sec_id]
-                            line_end_id = section_ids[_cfg_sec_id + 1] if _cfg_sec_id < len(sections) - 1 else len(
-                                file_args)
-                            _sec_args += file_args[line_start_id:line_end_id]
+                    for _sec, _sec_id in _cfg_sec_iter:
+                        line_start_id = section_ids[_sec_id]
+                        line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
+                            file_args)
+                        _sec_args += file_args[line_start_id:line_end_id]
 
                     file_args = _sec_args
 
