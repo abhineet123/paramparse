@@ -398,7 +398,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
                 _cfg = os.path.join(cfg_root, _cfg)
-            if os.path.isfile(_cfg):
+            if not os.path.isfile(_cfg):
+                print('cfg file does not exist: {:s}'.format(_cfg))
+            else:
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = open(_cfg, 'r').readlines()
                 if _cfg_sec:
@@ -418,15 +420,16 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                        section.startswith('__') and section.endswith('__')]
                     _cfg_sec += common_sections
 
-                    if _cfg_sec:
-                        print('Reading from section(s):\n{}'.format(pformat(_cfg_sec)))
                     try:
                         _cfg_sec_ids = [sections.index(_sec) for _sec in _cfg_sec]
                     except ValueError:
-                        raise IOError('One or more sections not found in cfg file {} with sections:\n{}'.format(
-                            _cfg, sections))
+                        raise IOError('One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
+                            _cfg_sec, _cfg, sections))
 
                     _cfg_sec_iter = [(x, y) for y, x in sorted(zip(_cfg_sec_ids, _cfg_sec))]
+
+                    if _cfg_sec:
+                        print('Reading from section(s):\n{}'.format(pformat([x for x, _ in _cfg_sec_iter])))
 
                     _sec_args = []
                     for _sec, _sec_id in _cfg_sec_iter:
