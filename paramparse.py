@@ -445,12 +445,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
 
                     _sec_args = []
-                    for _sec, _sec_ids in _cfg_sec_iter:
-                        for _sec_id in _sec_ids:
-                            line_start_id = section_ids[_sec_id]
-                            line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
-                                file_args)
-                            _sec_args += file_args[line_start_id:line_end_id]
+                    for _sec, _sec_id in _cfg_sec_iter:
+                        line_start_id = section_ids[_sec_id]
+                        line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
+                            file_args)
+                        _sec_args += file_args[line_start_id:line_end_id]
 
                     file_args = _sec_args
 
