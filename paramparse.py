@@ -402,7 +402,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 print('cfg file does not exist: {:s}'.format(_cfg))
             else:
                 print('Reading parameters from {:s}'.format(_cfg))
-                file_args = open(_cfg, 'r').readlines()
+                file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
                 if _cfg_sec:
                     excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
 
