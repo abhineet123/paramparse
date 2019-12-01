@@ -5,7 +5,7 @@ with open("ReadMe.md", "r") as fh:
 
 setuptools.setup(
     name="paramparse",
-    version="0.6.8",
+    version="0.6.9",
     author="Abhineet Singh",
     author_email="abhineet.iiita@gmail.com",
     description="argparse wrapper to allow hierarchically nested class based parameters",

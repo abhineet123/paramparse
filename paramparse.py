@@ -421,10 +421,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _cfg_sec += common_sections
 
                     try:
-                        _cfg_sec_ids = [sections.index(_sec) for _sec in _cfg_sec]
+                        _cfg_sec_ids = [[i for i, x in enumerate(_cfg_sec) if x == _sec] for _sec in _cfg_sec]
                     except ValueError:
                         raise IOError('One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
                             _cfg_sec, _cfg, sections))
+
+                    # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
                     _cfg_sec_iter = [(x, y) for y, x in sorted(zip(_cfg_sec_ids, _cfg_sec))]
 
@@ -432,11 +434,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         print('Reading from section(s):\n{}'.format(pformat([x for x, _ in _cfg_sec_iter])))
 
                     _sec_args = []
-                    for _sec, _sec_id in _cfg_sec_iter:
-                        line_start_id = section_ids[_sec_id]
-                        line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
-                            file_args)
-                        _sec_args += file_args[line_start_id:line_end_id]
+                    for _sec, _sec_ids in _cfg_sec_iter:
+                        for _sec_id in _sec_ids:
+                            line_start_id = section_ids[_sec_id]
+                            line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
+                                file_args)
+                            _sec_args += file_args[line_start_id:line_end_id]
 
                     file_args = _sec_args
 
