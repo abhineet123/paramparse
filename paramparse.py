@@ -420,19 +420,29 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                        section.startswith('__') and section.endswith('__')]
                     _cfg_sec += common_sections
 
-                    _cfg_sec = list(set(_cfg_sec))
+                    # _cfg_sec = list(set(_cfg_sec))
                     try:
                         _cfg_sec_ids = [[i for i, x in enumerate(_cfg_sec) if x == _sec] for _sec in _cfg_sec]
                     except ValueError:
-                        raise IOError('One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
-                            _cfg_sec, _cfg, sections))
+                        raise IOError(
+                            'One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
+                                _cfg_sec, _cfg, sections))
 
                     # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
-                    _cfg_sec_iter = [(x, y) for y, x in sorted(zip(_cfg_sec_ids, _cfg_sec))]
+                    """flatten"""
+                    __cfg_sec_ids = []
+                    __cfg_sec = []
+                    for _sec, _sec_ids in zip(_cfg_sec, _cfg_sec_ids):
+                        for _sec_id in _sec_ids:
+                            __cfg_sec.append(_sec)
+                            __cfg_sec_ids.append(_sec_id)
+
+                    """sort by line"""
+                    _cfg_sec_iter = [(x, y) for y, x in sorted(zip(__cfg_sec_ids, __cfg_sec))]
 
                     if _cfg_sec:
-                        print('Reading from section(s):\n{}'.format(pformat([x for x, _ in _cfg_sec_iter])))
+                        print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
 
                     _sec_args = []
                     for _sec, _sec_ids in _cfg_sec_iter:
