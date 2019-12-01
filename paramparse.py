@@ -420,6 +420,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                        section.startswith('__') and section.endswith('__')]
                     _cfg_sec += common_sections
 
+                    _cfg_sec = list(set(_cfg_sec))
                     try:
                         _cfg_sec_ids = [[i for i, x in enumerate(_cfg_sec) if x == _sec] for _sec in _cfg_sec]
                     except ValueError:
