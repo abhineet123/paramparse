@@ -421,12 +421,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _cfg_sec += common_sections
 
                     # _cfg_sec = list(set(_cfg_sec))
-                    try:
-                        _cfg_sec_ids = [[i for i, x in enumerate(_cfg_sec) if x == _sec] for _sec in _cfg_sec]
-                    except ValueError:
+
+                    if any([_sec not in sections for _sec in _cfg_sec]):
                         raise IOError(
                             'One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
                                 _cfg_sec, _cfg, sections))
+
+                    _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
 
                     # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
