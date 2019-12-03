@@ -398,7 +398,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
                 _cfg = os.path.join(cfg_root, _cfg)
-            if not os.path.isfile(_cfg):
+            if _cfg and not os.path.isfile(_cfg):
                 print('cfg file does not exist: {:s}'.format(_cfg))
             else:
                 print('Reading parameters from {:s}'.format(_cfg))
