@@ -382,10 +382,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if not cfg and hasattr(obj, 'cfg'):
             obj.cfg = cfg
 
-        if ',' not in cfg:
-            cfg = '{},'.format(cfg)
+        if isinstance(cfg, str):
+            if ',' not in cfg:
+                cfg = '{},'.format(cfg)
 
-        cfg = cfg.split(',')
+            cfg = cfg.split(',')
 
         args_in = []
         for _cfg in cfg:
