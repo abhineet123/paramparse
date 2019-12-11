@@ -14,6 +14,57 @@ except ImportError:
     import pickle
 
 
+class Node:
+    def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None, marker=None, line_id=None):
+        self.name = heading_text
+        self.parent = parent
+        self.orig_text = orig_text
+        self.parent_text = parent_text
+        self.marker = marker
+        self.line_id = line_id
+
+        if parent is None:
+            self.is_root = True
+        else:
+            self.is_root = False
+
+
+def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headings):
+    """
+
+    :param dict nodes:
+    :param _headings:
+    :param root_level:
+    :param _start_id:
+    :param _root_node:
+    :param n_headings:
+    :return:
+    """
+    _id = _start_id
+    while _id < n_headings:
+        _heading, line_id, curr_level = _headings[_id]
+        # curr_level = _heading[0].count('#') + 1
+
+        if curr_level <= root_level:
+            break
+
+        parent_text = ''
+        if _root_node is not None and _root_node.parent is not None:
+            parent_text = _root_node.name
+            if curr_level > 2:
+                # parent_text = str(_root_node)
+                parent_text = '{}/{}'.format(parent_text, _root_node.parent_text)
+        new_node = Node(_heading, parent=_root_node, orig_text=_heading, parent_text=parent_text,
+                        marker=_heading[0], line_id=line_id)
+        nodes[(_heading, line_id)] = new_node
+
+        ___id = _find_children(nodes, _headings, curr_level, _id + 1, new_node, n_headings)
+        # nodes += child_nodes
+        _id = ___id
+
+    return _id
+
+
 def scalar_to_string(val, add_quotes=False):
     if isinstance(val, (int, bool)):
         return '{:d}'.format(int(val))
@@ -406,10 +457,21 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
                 if _cfg_sec:
-                    excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
 
-                    _sections = [(k.lstrip('##').strip(), i) for i, k in enumerate(file_args) if k.startswith('##')]
-                    sections, section_ids = zip(*[(_sec, i) for _sec, i in _sections if _sec not in excluded_cfg_sec])
+                    _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1)
+                                 for i, k in enumerate(file_args) if k.startswith('##')]
+
+                    curr_root = Node("____root_node____")
+                    n_sections = len(_sections)
+                    nodes = {}
+                    _find_children(nodes, _sections, 0, 0, curr_root, n_sections)
+
+                    # _sections = [(k, i) for k, i in _sections]
+
+                    excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
+                    sections, section_ids = zip(
+                        *[(_sec, i) for _sec, i, _ in _sections if _sec not in excluded_cfg_sec])
+
                     # sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
 
                     if excluded_cfg_sec:
@@ -427,7 +489,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                     assert all([_sec in sections for _sec in _cfg_sec]), \
                         'One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
-                                _cfg_sec, _cfg, sections)
+                            _cfg_sec, _cfg, sections)
 
                     """all occurences of each section"""
                     _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
@@ -443,10 +505,22 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             __cfg_sec_ids.append(_sec_id)
 
                     """sort by line"""
-                    _cfg_sec_iter = [(x, y) for y, x in sorted(zip(__cfg_sec_ids, __cfg_sec))]
+                    _cfg_sec_iter = []
+                    valid_cfg_sec = []
+                    valid_names = ['____root_node____', ]
+                    for y, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
+                        if nodes[(x, section_ids[y])].parent.name in valid_names:
+                            valid_names.append(x)
+                            valid_cfg_sec.append(x)
+                            _cfg_sec_iter.append((x, y))
 
-                    if _cfg_sec:
-                        print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
+                    valid_cfg_sec = [k for k, _ in _cfg_sec_iter]
+                    invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
+
+                    if invalid_cfg_sec:
+                        raise AssertionError('Invalid cfg sections provided:\n {}'.format(invalid_cfg_sec))
+
+                    print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
 
                     _sec_args = []
                     for _sec, _sec_id in _cfg_sec_iter:
