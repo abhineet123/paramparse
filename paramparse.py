@@ -441,10 +441,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
         args_in = []
         for _cfg in cfg:
-            _cfg_sec = ''
+            _cfg_sec = []
             if ':' in _cfg:
                 _cfg = _cfg.split(':')
-                _cfg_sec = list(_cfg[1:])
+                _cfg_sec = [k for k in list(_cfg[1:]) if k]
                 _cfg = _cfg[0]
             if cfg_ext:
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
