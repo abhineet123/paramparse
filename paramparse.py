@@ -531,7 +531,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     file_args = _sec_args
 
                 file_args = [arg.strip() for arg in file_args if arg.strip()]
-                # lines starting with # in the cfg file are regarded as comments and thus ignored
+                # lines starting with # in the cfg file are comments or section headings and thus ignored
                 file_args = ['--{:s}'.format(arg) for arg in file_args if not arg.startswith('#')]
                 args_in += file_args
 
