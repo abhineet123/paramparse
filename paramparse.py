@@ -456,6 +456,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             else:
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
+                n_file_args = len(file_args)
                 if _cfg_sec:
 
                     _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1)
@@ -505,26 +506,27 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             __cfg_sec_ids.append(_sec_id)
 
                     """sort by line"""
-                    _cfg_sec_iter = []
+                    _cfg_sec_disp = []
                     valid_cfg_sec = []
                     _sec_args = []
                     valid_parent_names = ['____root_node____', ]
                     for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
-                        if nodes[(x, section_ids[_sec_id])].parent.name in valid_parent_names:
-                            valid_parent_names.append(x)
-                            valid_cfg_sec.append(x)
-                            _start_id = section_ids[_sec_id]
-                            _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
-                                file_args)
-                            _sec_args += file_args[_start_id:_end_id]
+                        if nodes[(x, section_ids[_sec_id])].parent.name not in valid_parent_names:
+                            continue
 
-                            _cfg_sec_iter.append((x, _start_id))
+                        valid_parent_names.append(x)
+                        valid_cfg_sec.append(x)
+                        _start_id = section_ids[_sec_id]
+                        _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
+                        _sec_args += file_args[_start_id:_end_id]
+
+                        _cfg_sec_disp.append((x, _start_id + 1))
 
                     invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
                     if invalid_cfg_sec:
                         raise AssertionError('Invalid cfg sections provided:\n {}'.format(invalid_cfg_sec))
 
-                    print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
+                    print('Reading from section(s):\n{}'.format(_cfg_sec_disp))
 
                     file_args = _sec_args
 
