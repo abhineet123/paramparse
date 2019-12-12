@@ -507,27 +507,24 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     """sort by line"""
                     _cfg_sec_iter = []
                     valid_cfg_sec = []
-                    valid_names = ['____root_node____', ]
-                    for y, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
-                        if nodes[(x, section_ids[y])].parent.name in valid_names:
-                            valid_names.append(x)
+                    _sec_args = []
+                    valid_parent_names = ['____root_node____', ]
+                    for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
+                        if nodes[(x, section_ids[_sec_id])].parent.name in valid_parent_names:
+                            valid_parent_names.append(x)
                             valid_cfg_sec.append(x)
-                            _cfg_sec_iter.append((x, y))
+                            _start_id = section_ids[_sec_id]
+                            _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
+                                file_args)
+                            _sec_args += file_args[_start_id:_end_id]
 
-                    valid_cfg_sec = [k for k, _ in _cfg_sec_iter]
+                            _cfg_sec_iter.append((x, _start_id))
+
                     invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
-
                     if invalid_cfg_sec:
                         raise AssertionError('Invalid cfg sections provided:\n {}'.format(invalid_cfg_sec))
 
                     print('Reading from section(s):\n{}'.format(_cfg_sec_iter))
-
-                    _sec_args = []
-                    for _sec, _sec_id in _cfg_sec_iter:
-                        line_start_id = section_ids[_sec_id]
-                        line_end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else len(
-                            file_args)
-                        _sec_args += file_args[line_start_id:line_end_id]
 
                     file_args = _sec_args
 
