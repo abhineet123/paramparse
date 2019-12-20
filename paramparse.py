@@ -389,7 +389,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
     :param obj:
     :param list | None args_in:
-    :param str cmd:
+    :param bool cmd: enable command line argument processing
     :param str cfg:
     :param str cfg_root:
     :param str cfg_ext:
@@ -488,8 +488,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _cfg_sec = list(set(_cfg_sec))
 
                     assert all([_sec in sections for _sec in _cfg_sec]), \
-                        'One or more sections from: {} not found in cfg file {} with sections:\n{}'.format(
-                            _cfg_sec, _cfg, sections)
+                        'One or more sections from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
+                            pformat(_cfg_sec), _cfg, pformat(sections))
 
                     """all occurences of each section"""
                     _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
