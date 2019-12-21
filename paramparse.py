@@ -139,13 +139,12 @@ def str_to_tuple(val):
             return tuple(np.arange(*_temp))
         except BaseException as e:
             pass
-    if ',' not in val:
-        val = '{},'.format(val)
-
     if any(k in val for k in ('(', '{', '[')):
         # nested tuple
         return literal_eval(val)
     else:
+        if ',' not in val:
+            val = '{},'.format(val)
         arg_vals = [x for x in val.split(',')]
         if not arg_vals[-1]:
             del arg_vals[-1]
