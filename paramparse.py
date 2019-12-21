@@ -146,7 +146,9 @@ def str_to_tuple(val):
         # nested tuple
         return literal_eval(val)
     else:
-        arg_vals = [x for x in val.split(',') if x]
+        arg_vals = [x for x in val.split(',')]
+        if not arg_vals[-1]:
+            del arg_vals[-1]
         arg_vals_parsed = []
         for _val in arg_vals:
             try:
