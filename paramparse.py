@@ -438,7 +438,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             if ',' not in cfg:
                 cfg = '{},'.format(cfg)
 
-            cfg = cfg.split(',')
+            cfg = [k for k in cfg.split(',') if k]
 
         args_in = []
         for _cfg in cfg:
