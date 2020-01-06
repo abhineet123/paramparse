@@ -472,6 +472,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = _cfg.split(':')
                 _cfg_sec = [k for k in list(_cfg[1:]) if k]
                 _cfg = _cfg[0]
+
+            """optional __ for better visible discrimination between cfg files and sections 
+            in commands stored in markdown files"""
+            _cfg = _cfg.strip('__')
+
             if cfg_ext:
                 _cfg = '{}.{}'.format(_cfg, cfg_ext)
             if cfg_root:
