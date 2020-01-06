@@ -29,6 +29,27 @@ class Node:
             self.is_root = False
 
 
+def match_opt(params, opt_name, print_name=''):
+    """
+
+    :param params:
+    :param str opt_name:
+    :return:
+    """
+
+    if not print_name:
+        print_name = opt_name
+
+    opt_val = str(getattr(params, opt_name))
+    opt_vals = params.help[opt_name]  # type: dict
+
+    matching_val = [k for k in opt_vals.keys() if opt_val in opt_vals[k]]
+    assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
+    assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
+
+    return matching_val[0]
+
+
 def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headings):
     """
 
@@ -150,13 +171,17 @@ def str_to_tuple(val):
             del arg_vals[-1]
         arg_vals_parsed = []
         for _val in arg_vals:
+            """try parsing in decreasing order of specificity --> int, float, str"""
             try:
                 _val_parsed = int(_val)
             except ValueError:
                 try:
                     _val_parsed = float(_val)
                 except ValueError:
+                    """remove trailing and leading quotes"""
+                    _val = strip_quotes(_val)
                     _val_parsed = _val
+
             if _val_parsed == '__n__':
                 _val_parsed = ''
             arg_vals_parsed.append(_val_parsed)
@@ -453,7 +478,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = os.path.join(cfg_root, _cfg)
             if not os.path.isfile(_cfg):
                 if _cfg:
-                    print('cfg file does not exist: {:s}'.format(_cfg))
+                    raise IOError('cfg file does not exist: {:s}'.format(_cfg))
             else:
                 print('Reading parameters from {:s}'.format(_cfg))
                 file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
@@ -567,6 +592,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         # @@@name: pf=name1.name
 
         _args_in = []
+        _args_dict = {}
         pf = ''
         for _id, _arg in enumerate(args_in):
             _arg = _arg[2:]
@@ -592,13 +618,30 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 else:
                     pf = _name
                 continue
-            try:
-                _name, _val = _arg.split('=')
-            except ValueError as e:
-                raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
-            if pf:
-                _name = '{}.{}'.format(pf, _name)
+            if '+=' in _arg:
+                try:
+                    _name, _val = _arg.split('+=')
+                except ValueError as e:
+                    raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
+                if pf:
+                    _name = '{}.{}'.format(pf, _name)
+                try:
+                    old_val = _args_dict[_name]
+                except KeyError:
+                    raise AssertionError('Accumulative value provided for uninitialized arg: {} :: {}'.format(
+                        _name, _arg))
+                _val = '{},{}'.format(old_val, _val)
+            else:
+                try:
+                    _name, _val = _arg.split('=')
+                except ValueError as e:
+                    raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
+                if pf:
+                    _name = '{}.{}'.format(pf, _name)
+
             _args_in.append('--{}={}'.format(_name, _val))
+            _args_dict[_name] = _val
+
         args_in = _args_in
 
         _args_in = []
