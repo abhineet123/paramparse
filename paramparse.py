@@ -331,7 +331,7 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
             if member_type is None:
                 print('No type found in docstring for param {} with default as None'.format(member))
                 continue
-            print('Deduced type {} from docstring for param {} with default as None'.format(member_type, member))
+            # print('Deduced type {} from docstring for param {} with default as None'.format(member_type, member))
         else:
             member_type = type(default_val)
 
