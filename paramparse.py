@@ -305,7 +305,16 @@ def type_from_docs(obj, member):
     return None
 
 
-def _add_params_to_parser(parser, obj, root_name='', obj_name=''):
+def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''):
+    """
+
+    :param argparse.ArgumentParser parser:
+    :param obj:
+    :param dict member_to_type:
+    :param str root_name:
+    :param str obj_name:
+    :return:
+    """
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
                      and not attr.startswith("__")])
     if obj_name:
@@ -327,6 +336,8 @@ def _add_params_to_parser(parser, obj, root_name='', obj_name=''):
             member_type = type(default_val)
 
         if member_type in (int, bool, float, str, tuple, list, dict):
+            member_to_type[member] = member_type
+
             if root_name:
                 member_param_name = '{:s}.{:s}'.format(root_name, member)
             else:
@@ -353,20 +364,30 @@ def _add_params_to_parser(parser, obj, root_name='', obj_name=''):
         else:
             # parameter is itself an instance of some other parmeter class so its members must
             # be processed recursively
-            _add_params_to_parser(parser, getattr(obj, member), root_name, member)
+            _add_params_to_parser(parser, getattr(obj, member), member_to_type, root_name, member)
 
 
-def _assign_arg(obj, arg, _id, val, all_params, parent_name):
+def _assign_arg(obj, arg, _id, val, member_to_type, parent_name):
+    """
+
+    :param obj:
+    :param list arg:
+    :param int _id:
+    :param val:
+    :param dict member_to_type:
+    :param str parent_name:
+    :return:
+    """
     if _id >= len(arg):
-        print('Invalid arg: ', arg)
+        print('Invalid arg: {} with _id: {}'.format(arg, _id))
         return
 
     _arg = arg[_id]
     obj_attr = getattr(obj, _arg)
     obj_attr_name = '{}.{}'.format(parent_name, _arg) if parent_name else _arg
     if obj_attr is None:
-        _key = '--{}'.format(obj_attr_name)
-        obj_attr_type = all_params[_key].type
+        # _key = '--{}'.format(obj_attr_name)
+        obj_attr_type = member_to_type[obj_attr_name]
     else:
         obj_attr_type = type(obj_attr)
 
@@ -388,25 +409,32 @@ def _assign_arg(obj, arg, _id, val, all_params, parent_name):
     else:
         # parameter is itself an instance of some other parameter class so its members must
         # be processed recursively
-        _assign_arg(obj_attr, arg, _id + 1, val, all_params, obj_attr_name)
+        _assign_arg(obj_attr, arg, _id + 1, val, member_to_type, obj_attr_name)
 
 
-def _process_args_from_parser(obj, args, parser):
+def _process_args_from_parser(obj, args, member_to_type):
+    """
+
+    :param obj:
+    :param Namespace args:
+    :param dict member_to_type:
+    :return:
+    """
     # arg_prefix = ''
     # if hasattr(obj, 'arg_prefix'):
     #     arg_prefix = obj.arg_prefix
 
-    optionals = parser._optionals._option_string_actions
-    positionals = parser._positionals._option_string_actions
+    # optionals = parser._optionals._option_string_actions
+    # positionals = parser._positionals._option_string_actions
 
-    all_params = optionals.copy()
-    all_params.update(positionals)
+    # all_params = optionals.copy()
+    # all_params.update(positionals)
 
     members = vars(args)
     for key in members.keys():
         val = members[key]
         key_parts = key.split('.')
-        _assign_arg(obj, key_parts, 0, val, all_params, '')
+        _assign_arg(obj, key_parts, 0, val, member_to_type, '')
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
@@ -435,7 +463,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         arg_dict['description'] = obj.help['__desc__']
 
     parser = argparse.ArgumentParser(**arg_dict)
-    _add_params_to_parser(parser, obj)
+    member_to_type = {}
+    _add_params_to_parser(parser, obj, member_to_type)
 
     if args_in is None:
         argv_id = 1
@@ -664,7 +693,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             print('Unknown arguments found:\n{}'.format(pformat(unknown)))
     else:
         args = parser.parse_args(args_in)
-    _process_args_from_parser(obj, args, parser)
+    _process_args_from_parser(obj, args, member_to_type)
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)

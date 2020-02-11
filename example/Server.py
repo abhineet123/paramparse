@@ -1,8 +1,6 @@
 from Data import TrainParams, TestParams
-from Trainer import TrainerParams
-from Tester import  TesterParams
 from Visualizer import VisualizerParams
-from PatchTracker import PatchTrackerParams
+from trackers.PatchTracker import PatchTrackerParams
 from Gate import GateParams
 
 class ServerParams:
