@@ -811,7 +811,8 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
             print('Class definition copied to clipboard')
 
     else:
-        out_fname = '{}.py'.format(class_name)
+        class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
+        out_fname = '{}.py'.format(class_name_snake_case)
         out_path = os.path.abspath(out_fname)
         print('Writing output to {}'.format(out_path))
         with open(out_path, 'w') as fid:
@@ -879,7 +880,8 @@ def from_dict(param_dict, class_name='Params',
             print('Class definition copied to clipboard')
 
     else:
-        out_fname = '{}.py'.format(class_name)
+        class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
+        out_fname = '{}.py'.format(class_name_snake_case)
         out_path = os.path.abspath(out_fname)
         print('Writing output to {}'.format(out_path))
         with open(out_path, 'w') as fid:
