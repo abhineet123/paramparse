@@ -525,6 +525,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                  for i, k in enumerate(file_args) if k.startswith('##')]
 
                     _sections = [k if k[0] else ('__common__', k[1], k[2]) for k in _sections]
+                    """default sections
+                    """
+                    # _default_sections, _default_section_ids = zip(*[(k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections)
+                    #                                                 if k[0].endswith('__')])
+                    # for i, j in enumerate(_default_section_ids):
+                    #     k = _sections[i]
+                    #     _sections[j] = (_default_sections[i], k[1], k[2])
 
                     curr_root = Node("____root_node____")
                     n_sections = len(_sections)
@@ -545,22 +552,30 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         if not _cfg_sec:
                             _cfg_sec = sections
 
+                    """add common sections
+                    """
                     common_sections = [s for s in sections if s.startswith('__') and s.endswith('__')]
                     _cfg_sec += common_sections
 
-                    """unique section names"""
+                    """unique section names
+                    """
                     _cfg_sec = list(set(_cfg_sec))
 
-                    assert all([_sec in sections for _sec in _cfg_sec]), \
-                        'One or more sections from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
+                    valid_check = [_sec in sections for _sec in _cfg_sec]
+
+                    assert all(valid_check), \
+                        'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
+                            [_sec for _sec in _cfg_sec if _sec not in sections],
                             pformat(_cfg_sec), _cfg, pformat(sections))
 
-                    """all occurences of each section"""
+                    """all occurences of each section
+                    """
                     _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
 
                     # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
-                    """flatten"""
+                    """flatten
+                    """
                     __cfg_sec_ids = []
                     __cfg_sec = []
                     for _sec, _sec_ids in zip(_cfg_sec, _cfg_sec_ids):
@@ -568,7 +583,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             __cfg_sec.append(_sec)
                             __cfg_sec_ids.append(_sec_id)
 
-                    """sort by line"""
+                    """sort by line
+                    """
                     _cfg_sec_disp = []
                     valid_cfg_sec = []
                     _sec_args = []
