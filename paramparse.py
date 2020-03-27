@@ -530,8 +530,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _sections = [k if k[0] else ('__common__', k[1], k[2]) for k in _sections]
                     """default sections
                     """
-                    # _default_sections, _default_section_ids = zip(*[(k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections)
-                    #                                                 if k[0].endswith('__')])
+                    # _default_sections, _default_section_ids = zip(*[
+                    #     (k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections) if k[0].endswith('__')])
                     # for i, j in enumerate(_default_section_ids):
                     #     k = _sections[i]
                     #     _sections[j] = (_default_sections[i], k[1], k[2])
@@ -600,11 +600,20 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         valid_cfg_sec.append(x)
                         _start_id = section_ids[_sec_id] + 1
                         _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
+
+                        # discard empty lines from end of section
+                        while not file_args[_end_id - 1]:
+                            _end_id -= 1
+
                         _sec_args += file_args[_start_id:_end_id]
 
                         if x not in common_sections:
-                            _cfg_sec_disp.append('{}: {} -> {}'.format(x, _start_id + 1 - file_args_offset,
-                                                                       _end_id - file_args_offset))
+                            start_line_num = _start_id + 1 - file_args_offset
+                            end_line_num = _end_id - file_args_offset
+                            _str = '{}: {}'.format(x, start_line_num)
+                            if end_line_num > start_line_num:
+                                _str = '{} -> {}'.format(_str, end_line_num)
+                            _cfg_sec_disp.append(_str)
 
                     invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
                     if invalid_cfg_sec:
