@@ -592,6 +592,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     valid_cfg_sec = []
                     _sec_args = []
                     valid_parent_names = ['____root_node____', ]
+                    _common_str = ''
                     for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
                         if nodes[(x, section_ids[_sec_id])].parent.name not in valid_parent_names:
                             continue
@@ -607,17 +608,28 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                         _sec_args += file_args[_start_id:_end_id]
 
+                        start_line_num = _start_id + 1 - file_args_offset
+                        end_line_num = _end_id - file_args_offset
+
                         if x not in common_sections:
-                            start_line_num = _start_id + 1 - file_args_offset
-                            end_line_num = _end_id - file_args_offset
+
                             _str = '{}: {}'.format(x, start_line_num)
                             if end_line_num > start_line_num:
                                 _str = '{} -> {}'.format(_str, end_line_num)
                             _cfg_sec_disp.append(_str)
+                        else:
+                            _str = '{}'.format(start_line_num)
+                            if end_line_num > start_line_num:
+                                _str = '{} -> {}'.format(_str, end_line_num)
+                            _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
 
                     invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
                     if invalid_cfg_sec:
                         raise AssertionError('Invalid cfg sections provided:\n {}'.format(invalid_cfg_sec))
+
+                    if _common_str:
+                        _common_str = 'common: {}'.format(_common_str)
+                        _cfg_sec_disp.append(_common_str)
 
                     print('\t{}'.format(
                         '\n\t'.join(_cfg_sec_disp)
