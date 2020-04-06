@@ -32,7 +32,7 @@ class Node:
             self.full_name = self.name
         else:
             self.is_root = False
-            self.full_name = parent.full_name + self.name
+            self.full_name = parent.name + self.name
 
 
 def match_opt(params, opt_name, print_name=''):
@@ -577,20 +577,20 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
                     specific_sec = []
                     for _id, _sec in invalid_sec:
-                        _node_matches = [nodes[k] for k in nodes
-                                        if nodes[k].full_name == root_sec_name+_sec]
+                        _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
                             _sec, _cfg, pformat(sections)))
                         # curr_specific_sec = []
                         for _node in _node_matches:
-                            _sec_matches = []
-                            curr_node = _node
-                            while curr_node.parent is not None:
-                                _sec_matches.append((curr_node.seq_id, curr_node.name))
-                                curr_node = curr_node.parent
-                            specific_sec += _sec_matches[::-1]
-
+                            specific_sec.append((_node.seq_id, _node.name))
+                            specific_sec.append((_node.parent.seq_id, _node.parent.name))
+                            # _sec_matches = []
+                            # curr_node = _node
+                            # while curr_node.parent is not None:
+                            #     _sec_matches.append((curr_node.seq_id, curr_node.name))
+                            #     curr_node = curr_node.parent
+                            # specific_sec += _sec_matches[::-1]
                         # specific_sec[_sec] = curr_specific_sec
 
                         del _cfg_sec[_id]
