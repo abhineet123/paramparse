@@ -582,7 +582,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
                             _sec, _cfg, pformat(sections)))
-                        curr_specific_sec = []
+                        # curr_specific_sec = []
                         for _node in _node_matches:
                             _sec_matches = []
                             curr_node = _node
