@@ -6,6 +6,8 @@ import inspect
 import argparse
 from ast import literal_eval
 from pprint import pformat
+from datetime import datetime
+
 import numpy as np
 
 try:
@@ -15,18 +17,22 @@ except ImportError:
 
 
 class Node:
-    def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None, marker=None, line_id=None):
+    def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None,
+                 marker=None, line_id=None, seq_id=None):
         self.name = heading_text
         self.parent = parent
         self.orig_text = orig_text
         self.parent_text = parent_text
         self.marker = marker
         self.line_id = line_id
+        self.seq_id = seq_id
 
         if parent is None:
             self.is_root = True
+            self.full_name = self.name
         else:
             self.is_root = False
+            self.full_name = parent.full_name + self.name
 
 
 def match_opt(params, opt_name, print_name=''):
@@ -34,6 +40,7 @@ def match_opt(params, opt_name, print_name=''):
 
     :param params:
     :param str opt_name:
+    :param str print_name:
     :return:
     """
 
@@ -76,7 +83,7 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
                 # parent_text = str(_root_node)
                 parent_text = '{}/{}'.format(parent_text, _root_node.parent_text)
         new_node = Node(_heading, parent=_root_node, orig_text=_heading, parent_text=parent_text,
-                        marker=_heading[0], line_id=line_id)
+                        marker=_heading[0], line_id=line_id, seq_id=_id)
         nodes[(_heading, line_id)] = new_node
 
         ___id = _find_children(nodes, _headings, curr_level, _id + 1, new_node, n_headings)
@@ -536,9 +543,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     #     k = _sections[i]
                     #     _sections[j] = (_default_sections[i], k[1], k[2])
 
-                    curr_root = Node("____root_node____")
+                    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+                    root_sec_name = "__root_{}__".format(time_stamp)
+                    curr_root = Node(root_sec_name)
                     n_sections = len(_sections)
-                    nodes = {}
+                    nodes = {}  # :type dict(tuple, Node)
                     _find_children(nodes, _sections, 0, 0, curr_root, n_sections)
 
                     # _sections = [(k, i) for k, i in _sections]
@@ -553,6 +562,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         print('Excluding section(s):\n{}'.format(pformat(excluded_cfg_sec)))
                         _cfg_sec = [_sec for _sec in _cfg_sec if _sec not in excluded_cfg_sec]
                         if not _cfg_sec:
+                            print('No included sections found for cfg file {} so including all sections'.format(_cfg))
                             _cfg_sec = sections
 
                     """add common sections
@@ -564,14 +574,34 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     """
                     _cfg_sec = list(set(_cfg_sec))
 
-                    valid_check = [_sec in sections for _sec in _cfg_sec]
+                    invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
+                    specific_sec = []
+                    for _id, _sec in invalid_sec:
+                        _node_matches = [nodes[k] for k in nodes
+                                        if nodes[k].full_name == root_sec_name+_sec]
+                        if not _node_matches:
+                            raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
+                            _sec, _cfg, pformat(sections)))
+                        curr_specific_sec = []
+                        for _node in _node_matches:
+                            _sec_matches = []
+                            curr_node = _node
+                            while curr_node.parent is not None:
+                                _sec_matches.append((curr_node.seq_id, curr_node.name))
+                                curr_node = curr_node.parent
+                            specific_sec += _sec_matches[::-1]
 
-                    assert all(valid_check), \
-                        'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
-                            [_sec for _sec in _cfg_sec if _sec not in sections],
-                            pformat(_cfg_sec), _cfg, pformat(sections))
+                        # specific_sec[_sec] = curr_specific_sec
 
-                    """all occurences of each section
+                        del _cfg_sec[_id]
+
+                    # valid_check = [_sec in sections for _sec in _cfg_sec]
+                    # assert all(valid_check), \
+                    #     'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
+                    #         [_sec for _sec in _cfg_sec if _sec not in sections],
+                    #         pformat(_cfg_sec), _cfg, pformat(sections))
+
+                    """all occurrences of each section
                     """
                     _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
 
@@ -591,9 +621,25 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _cfg_sec_disp = []
                     valid_cfg_sec = []
                     _sec_args = []
-                    valid_parent_names = ['____root_node____', ]
+                    valid_parent_names = [root_sec_name, ]
                     _common_str = ''
+
+                    for _sec_id, x in specific_sec:
+                        __cfg_sec_ids.append(_sec_id)
+                        __cfg_sec.append(x)
+
+
+                        # _start_id = section_ids[_sec_id] + 1
+                        # _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
+                        #
+                        # # discard empty lines from end of section
+                        # while not file_args[_end_id - 1]:
+                        #     _end_id -= 1
+
+                        # _sec_args += file_args[_start_id:_end_id]
+
                     for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
+
                         if nodes[(x, section_ids[_sec_id])].parent.name not in valid_parent_names:
                             continue
 
