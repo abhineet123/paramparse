@@ -369,7 +369,7 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
                 parser.add_argument('--{:s}'.format(member_param_name), type=member_type, default=default_val,
                                     help=_help, metavar='')
         else:
-            # parameter is itself an instance of some other parmeter class so its members must
+            # parameter is itself an instance of some other parameter class so its members must
             # be processed recursively
             _add_params_to_parser(parser, getattr(obj, member), member_to_type, root_name, member)
 
