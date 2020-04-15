@@ -478,7 +478,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
         if not cfg:
             # check for cfg files specified at command line
-            if cmd and len(sys.argv) > 1 and '--cfg' in sys.argv[1]:
+            if cmd and len(sys.argv) > 1 and ('--cfg' in sys.argv[1] or sys.argv[1].startswith('cfg=')):
                 _, arg_val = sys.argv[1].split('=')
                 cfg = arg_val
                 argv_id += 1
@@ -593,7 +593,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             # specific_sec += _sec_matches[::-1]
                         # specific_sec[_sec] = curr_specific_sec
 
-                        del _cfg_sec[_id]
+                        _cfg_sec[_id] = ''
 
                     # valid_check = [_sec in sections for _sec in _cfg_sec]
                     # assert all(valid_check), \
@@ -601,9 +601,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     #         [_sec for _sec in _cfg_sec if _sec not in sections],
                     #         pformat(_cfg_sec), _cfg, pformat(sections))
 
+
                     """all occurrences of each section
                     """
-                    _cfg_sec_ids = [[i for i, x in enumerate(sections) if x == _sec] for _sec in _cfg_sec]
+                    _cfg_sec_ids = [[i for i, x in enumerate(sections) if _sec and x == _sec] for _sec in _cfg_sec]
 
                     # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
@@ -669,9 +670,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                 _str = '{} -> {}'.format(_str, end_line_num)
                             _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
 
-                    invalid_cfg_sec = [k for k in _cfg_sec if k not in valid_cfg_sec]
+                    invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
                     if invalid_cfg_sec:
-                        raise AssertionError('Invalid cfg sections provided:\n {}'.format(invalid_cfg_sec))
+                        raise AssertionError('Invalid cfg sections provided for {}:\n {}'.format(_cfg, invalid_cfg_sec))
 
                     if _common_str:
                         _common_str = 'common: {}'.format(_common_str)
@@ -750,9 +751,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 try:
                     old_val = _args_dict[_name]
                 except KeyError:
-                    raise AssertionError('Accumulative value provided for uninitialized arg: {} :: {}'.format(
-                        _name, _arg))
-                _val = '{},{}'.format(old_val, _val)
+                    pass
+                    # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
+                    #     _name, _arg))
+                else:
+                    _val = '{},{}'.format(old_val, _val)
             else:
                 try:
                     _name, _val = _arg.split('=')
