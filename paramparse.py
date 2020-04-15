@@ -580,7 +580,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
-                            _sec, _cfg, pformat(sections)))
+                                _sec, _cfg, pformat(sections)))
                         # curr_specific_sec = []
                         for _node in _node_matches:
                             specific_sec.append((_node.seq_id, _node.name))
@@ -600,7 +600,6 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     #     'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
                     #         [_sec for _sec in _cfg_sec if _sec not in sections],
                     #         pformat(_cfg_sec), _cfg, pformat(sections))
-
 
                     """all occurrences of each section
                     """
@@ -629,7 +628,6 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         __cfg_sec_ids.append(_sec_id)
                         __cfg_sec.append(x)
 
-
                         # _start_id = section_ids[_sec_id] + 1
                         # _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
                         #
@@ -649,9 +647,16 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         _start_id = section_ids[_sec_id] + 1
                         _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
 
+                        # discard empty lines from start of section
+                        while not file_args[_start_id - 1]:
+                            _start_id += 1
+
                         # discard empty lines from end of section
                         while not file_args[_end_id - 1]:
                             _end_id -= 1
+
+                        if _start_id >= _end_id:
+                            continue
 
                         _sec_args += file_args[_start_id:_end_id]
 
