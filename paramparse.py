@@ -17,8 +17,26 @@ except ImportError:
 
 
 class Node:
+    """
+    :type parent: Node
+    :type full_name: str
+    :type name: str
+    :type orig_text: str
+    :type parent_text: str
+    """
+
     def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None,
                  marker=None, line_id=None, seq_id=None):
+        """
+
+        :param str heading_text:
+        :param Node | None parent:
+        :param str orig_text:
+        :param str parent_text:
+        :param str marker:
+        :param int line_id:
+        :param int seq_id:
+        """
         self.name = heading_text
         self.parent = parent
         self.orig_text = orig_text
@@ -70,7 +88,7 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
     """
     _id = _start_id
     while _id < n_headings:
-        _heading, line_id, curr_level = _headings[_id]
+        _heading, line_id, curr_level, _ = _headings[_id]
         # curr_level = _heading[0].count('#') + 1
 
         if curr_level <= root_level:
@@ -178,21 +196,36 @@ def str_to_tuple(val):
             del arg_vals[-1]
         arg_vals_parsed = []
         for _val in arg_vals:
-            """try parsing in decreasing order of specificity --> int, float, str"""
-            try:
-                _val_parsed = int(_val)
-            except ValueError:
-                try:
-                    _val_parsed = float(_val)
-                except ValueError:
-                    """remove trailing and leading quotes"""
-                    _val = strip_quotes(_val)
-                    _val_parsed = _val
-
-            if _val_parsed == '__n__':
-                _val_parsed = ''
+            _val_parsed = str_to_basic_type(_val)
             arg_vals_parsed.append(_val_parsed)
         return arg_vals_parsed
+
+
+def str_to_basic_type(_val):
+    """try parsing in decreasing order of specificity --> int, float, str"""
+
+    """allow k,m,g terminated specification for large integers"""
+    if all(c.isdigit() for c in _val[:-1]):
+        if _val[-1] == 'k':
+            _val = _val.replace('k', '000')
+        if _val[-1] == 'm':
+            _val = _val.replace('m', '000000')
+        if _val[-1] == 'g':
+            _val = _val.replace('g', '000000000')
+    try:
+        _val_parsed = int(_val)
+    except ValueError:
+        try:
+            _val_parsed = float(_val)
+        except ValueError:
+            """remove trailing and leading quotes"""
+            _val = strip_quotes(_val)
+            _val_parsed = _val
+
+    if _val_parsed == '__n__':
+        _val_parsed = ''
+
+    return _val_parsed
 
 
 def save(obj, dir_name, out_name='params.bin'):
@@ -366,7 +399,7 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
                 parser.add_argument('--{:s}'.format(member_param_name), type=strip_quotes, default=default_val,
                                     help=_help, metavar='')
             else:
-                parser.add_argument('--{:s}'.format(member_param_name), type=member_type, default=default_val,
+                parser.add_argument('--{:s}'.format(member_param_name), type=str_to_basic_type, default=default_val,
                                     help=_help, metavar='')
         else:
             # parameter is itself an instance of some other parameter class so its members must
@@ -531,17 +564,31 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         file_args.insert(0, '##')
                         n_file_args += 1
                         file_args_offset = 1
-                    _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1)
+                    _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1, 0)
                                  for i, k in enumerate(file_args) if k.startswith('##')]
 
-                    _sections = [k if k[0] else ('__common__', k[1], k[2]) for k in _sections]
-                    """default sections
-                    """
+                    """common sections"""
+                    _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
+
+                    # """default sections
+                    # """
                     # _default_sections, _default_section_ids = zip(*[
                     #     (k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections) if k[0].endswith('__')])
                     # for i, j in enumerate(_default_section_ids):
                     #     k = _sections[i]
                     #     _sections[j] = (_default_sections[i], k[1], k[2])
+
+                    _temp_sections = []
+                    _curr_template_id = 1
+                    for i, _sec in enumerate(_sections):
+                        if ',' in _sec[0]:
+                            _templ_sec_names = _sec[0].split(',')
+                            _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in _templ_sec_names]
+                            _curr_template_id += 1
+                        else:
+                            _temp_sections.append(_sec)
+
+                    _sections = _temp_sections
 
                     time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
                     root_sec_name = "__root_{}__".format(time_stamp)
@@ -553,8 +600,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     # _sections = [(k, i) for k, i in _sections]
 
                     excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
-                    sections, section_ids = zip(
-                        *[(_sec, i) for _sec, i, _ in _sections if _sec not in excluded_cfg_sec])
+                    sections, section_ids, template_ids = zip(
+                        *[(_sec, i, _template_id) for _sec, i, _, _template_id in _sections
+                          if _sec not in excluded_cfg_sec])
 
                     # sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
 
@@ -576,8 +624,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                     invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
                     specific_sec = []
+                    specific_sec_ids = []
                     for _id, _sec in invalid_sec:
-                        _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]
+                        _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list[Node]
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
                                 _sec, _cfg, pformat(sections)))
@@ -585,6 +634,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         for _node in _node_matches:
                             specific_sec.append((_node.seq_id, _node.name))
                             specific_sec.append((_node.parent.seq_id, _node.parent.name))
+
+                            specific_sec_ids.append(_node.seq_id)
+                            specific_sec_ids.append(_node.parent.seq_id)
+
                             # _sec_matches = []
                             # curr_node = _node
                             # while curr_node.parent is not None:
@@ -637,15 +690,31 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                         # _sec_args += file_args[_start_id:_end_id]
 
+                    n_sections = len(sections)
                     for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
 
-                        if nodes[(x, section_ids[_sec_id])].parent.name not in valid_parent_names:
+                        curr_node = nodes[(x, section_ids[_sec_id])]  # type: Node
+
+                        if curr_node.parent.name not in valid_parent_names:
+                            print('skipping node {} whose parent {} in not among valid parents: {}'.format(
+                                curr_node.name, curr_node.parent.name, valid_parent_names))
                             continue
 
                         valid_parent_names.append(x)
                         valid_cfg_sec.append(x)
+
                         _start_id = section_ids[_sec_id] + 1
-                        _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
+                        _template_id = template_ids[_sec_id]
+                        if _template_id:
+                            """template sections with the same ID all have same line IDs so look for the 
+                            first subsequent section with different ID if any"""
+                            _end_id = n_file_args
+                            for i in range(_sec_id + 1, n_sections):
+                                if template_ids[i] != _template_id:
+                                    _end_id = section_ids[i]
+                                    break
+                        else:
+                            _end_id = section_ids[_sec_id + 1] if _sec_id < n_sections - 1 else n_file_args
 
                         # discard empty lines from start of section
                         while not file_args[_start_id - 1]:
@@ -656,16 +725,28 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             _end_id -= 1
 
                         if _start_id >= _end_id:
+                            # print('skipping empty section {}'.format(x))
                             continue
 
-                        _sec_args += file_args[_start_id:_end_id]
+                        _curr_sec_args = file_args[_start_id:_end_id]
+
+                        if _template_id:
+                            _curr_sec_name = sections[_sec_id]
+                            _curr_sec_full_name = curr_node.full_name
+                            for i, _curr_sec_arg in enumerate(_curr_sec_args):
+                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                                _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
+
+                        _sec_args += _curr_sec_args
 
                         start_line_num = _start_id + 1 - file_args_offset
                         end_line_num = _end_id - file_args_offset
 
                         if x not in common_sections:
 
-                            _str = '{}: {}'.format(x, start_line_num)
+                            _sec_disp_name = curr_node.full_name if _sec_id in specific_sec_ids else x
+
+                            _str = '{}: {}'.format(_sec_disp_name, start_line_num)
                             if end_line_num > start_line_num:
                                 _str = '{} -> {}'.format(_str, end_line_num)
                             _cfg_sec_disp.append(_str)

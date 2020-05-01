@@ -1,6 +1,6 @@
 from Data import TrainParams, TestParams
 from Visualizer import VisualizerParams
-from trackers.PatchTracker import PatchTrackerParams
+from trackers.patch_tracker import PatchTrackerParams
 from Gate import GateParams
 
 class ServerParams:
