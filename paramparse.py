@@ -230,8 +230,7 @@ def str_to_basic_type(_val):
             _val_parsed = float(_val)
         except ValueError:
             """remove trailing and leading quotes"""
-            _val = strip_quotes(_val)
-            _val_parsed = _val
+            _val_parsed = strip_quotes(_val)
 
     if _val_parsed == '__n__':
         _val_parsed = ''
@@ -853,6 +852,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     #     _name, _arg))
                 else:
                     _val = '{},{}'.format(old_val, _val)
+                    pass
             else:
                 try:
                     _name, _val = _arg.split('=')
