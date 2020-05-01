@@ -202,9 +202,16 @@ def str_to_tuple(val):
 
 
 def str_to_basic_type(_val):
+
+    # if _type == str:
+    #     _val_parsed = _val
+    #     if _val_parsed == '__n__':
+    #         _val_parsed = ''
+    #     return _val_parsed
+
     """try parsing in decreasing order of specificity --> int, float, str"""
 
-    """allow k,m,g terminated specification for large integers"""
+    """allow k,m,g,t,p terminated specification for large integers: kilo, mega, giga, tera, peta"""
     if all(c.isdigit() for c in _val[:-1]):
         if _val[-1] == 'k':
             _val = _val.replace('k', '000')
@@ -212,6 +219,10 @@ def str_to_basic_type(_val):
             _val = _val.replace('m', '000000')
         if _val[-1] == 'g':
             _val = _val.replace('g', '000000000')
+        if _val[-1] == 't':
+            _val = _val.replace('t', '000000000000')
+        if _val[-1] == 'p':
+            _val = _val.replace('t', '000000000000000')
     try:
         _val_parsed = int(_val)
     except ValueError:
