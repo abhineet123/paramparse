@@ -764,13 +764,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
                                                                               ','.join(_curr_sec_name.split('_')))
                                 if '__name_list_ratio__' in _curr_sec_args[i]:
-                                    temp = _curr_sec_args[i].replace('__name_list_ratio__',
-                                                                     ','.join(_curr_sec_name.split('_')))
+                                    temp = _curr_sec_name.split('_')
                                     for k_id, k in enumerate(temp):
                                         if k.startswith('n'):
                                             k = k.replace('n', '-')
                                         k = str(float(k) / 100.0)
                                         temp[k_id] = k
+                                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
 
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
                                                                               ':'.join(_curr_sec_name.split('_')))
