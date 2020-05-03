@@ -26,7 +26,8 @@ class Node:
     """
 
     def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None,
-                 marker=None, line_id=None, seq_id=None):
+                 # marker=None,
+                 line_id=None, seq_id=None):
         """
 
         :param str heading_text:
@@ -41,7 +42,7 @@ class Node:
         self.parent = parent
         self.orig_text = orig_text
         self.parent_text = parent_text
-        self.marker = marker
+        # self.marker = marker
         self.line_id = line_id
         self.seq_id = seq_id
 
@@ -89,6 +90,8 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
     _id = _start_id
     while _id < n_headings:
         _heading, line_id, curr_level, _ = _headings[_id]
+        assert _heading, "Invalid empty heading found"
+
         # curr_level = _heading[0].count('#') + 1
 
         if curr_level <= root_level:
@@ -101,7 +104,8 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
                 # parent_text = str(_root_node)
                 parent_text = '{}/{}'.format(parent_text, _root_node.parent_text)
         new_node = Node(_heading, parent=_root_node, orig_text=_heading, parent_text=parent_text,
-                        marker=_heading[0], line_id=line_id, seq_id=_id)
+                        # marker=_heading[0],
+                        line_id=line_id, seq_id=_id)
         nodes[(_heading, line_id)] = new_node
 
         ___id = _find_children(nodes, _headings, curr_level, _id + 1, new_node, n_headings)
@@ -639,7 +643,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list[Node]
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
-                                _sec, _cfg, pformat(sections)))
+                                _sec, _cfg, sections))
                         # curr_specific_sec = []
                         for _node in _node_matches:
                             specific_sec.append((_node.seq_id, _node.name))
@@ -745,6 +749,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             _curr_sec_full_name = curr_node.full_name
                             for i, _curr_sec_arg in enumerate(_curr_sec_args):
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
+                                                                              ','.join(_curr_sec_name.split('_')))
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
 
                         _sec_args += _curr_sec_args
