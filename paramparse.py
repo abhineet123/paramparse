@@ -206,7 +206,6 @@ def str_to_tuple(val):
 
 
 def str_to_basic_type(_val):
-
     # if _type == str:
     #     _val_parsed = _val
     #     if _val_parsed == '__n__':
@@ -640,12 +639,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     specific_sec = []
                     specific_sec_ids = []
                     for _id, _sec in invalid_sec:
-                        _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list[Node]
+                        _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list
                         if not _node_matches:
                             raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
                                 _sec, _cfg, sections))
                         # curr_specific_sec = []
-                        for _node in _node_matches:
+                        for _node in _node_matches:  # type:Node
                             specific_sec.append((_node.seq_id, _node.name))
                             specific_sec.append((_node.parent.seq_id, _node.parent.name))
 
