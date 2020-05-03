@@ -162,19 +162,32 @@ def strip_quotes(val):
 
 def str_to_tuple(val):
     if val.startswith('range('):
+        """standard (exclusive) range"""
         val_list = val[6:].replace(')', '').split(',')
         val_list = [int(x) for x in val_list]
         val_list = tuple(range(*val_list))
         return val_list
+    elif val.startswith('irange('):
+        """inclusive range"""
+        val_list = val.replace('irange(', '').replace(')', '').split(',')
+        val_list = [int(x) for x in val_list]
+
+        if len(val_list) == 1:
+            val_list[0] += 1
+        elif len(val_list) >= 2:
+            val_list[1] += 1
+        val_list = tuple(range(*val_list))
+        return val_list
     elif ':' in val:
-        # Try to parse the string as a range specification
+        """Try to parse the string as a floating point range specification - both inclusive and exclusive
+        """
         try:
             _val = val
             inclusive_start = inclusive_end = 1
             if _val.endswith(')'):
                 _val = _val[:-1]
                 inclusive_end = 0
-            if val.startswith(')'):
+            if val.startswith('('):
                 _val = _val[1:]
                 inclusive_start = 0
             _temp = [float(k) for k in _val.split(':')]
@@ -750,6 +763,18 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
                                                                               ','.join(_curr_sec_name.split('_')))
+                                if '__name_list_ratio__' in _curr_sec_args[i]:
+                                    temp = _curr_sec_args[i].replace('__name_list_ratio__',
+                                                                     ','.join(_curr_sec_name.split('_')))
+                                    for k_id, k in enumerate(temp):
+                                        if k.startswith('n'):
+                                            k = k.replace('n', '-')
+                                        k = str(float(k) / 100.0)
+                                        temp[k_id] = k
+
+                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
+                                                                              ':'.join(_curr_sec_name.split('_')))
+
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
 
                         _sec_args += _curr_sec_args
