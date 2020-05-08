@@ -611,7 +611,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                         """range based section names
                         """
-                        if _sec_name.startswith('range(') or _sec_name.startswith('irange(') or ':' in _sec_name:
+                        if _sec_name.startswith('(') or _sec_name.startswith('range(') or _sec_name.startswith('irange(') or ':' in _sec_name:
                             # assert ',' not in _sec_name, \
                             #     "Combining template and range sections is not supported currently"
                             range_tokens = _sec_name.split('_')
@@ -827,8 +827,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                 _str = '{} -> {}'.format(_str, end_line_num)
                             _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
 
-                        print(_str)
-                        pass
+                        # print(_str)
+                        # pass
 
                     invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
                     if invalid_cfg_sec:
