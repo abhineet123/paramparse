@@ -607,8 +607,39 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _temp_sections = []
                     _curr_template_id = 1
                     for i, _sec in enumerate(_sections):
-                        if ',' in _sec[0]:
-                            _templ_sec_names = _sec[0].split(',')
+                        _sec_name = _sec[0]
+
+                        """range based section names
+                        """
+                        if _sec_name.startswith('range(') or _sec_name.startswith('irange(') or ':' in _sec_name:
+                            # assert ',' not in _sec_name, \
+                            #     "Combining template and range sections is not supported currently"
+                            range_tokens = _sec_name.split('_')
+                            range_tuples = tuple(map(str_to_tuple, range_tokens))
+                            # range_tuples = []
+                            # for token in range_tokens:
+                            #     range_tuple = str_to_tuple(token)
+                            #     range_tuples.append(range_tuple)
+
+                            def _get_sec_names(_sec_names, _tuples, _id, _nums):
+                                for _num in _tuples[_id]:
+                                    __nums = _nums[:]
+                                    if _num < 0:
+                                        __nums.append('n' + str(abs(_num)))
+                                    else:
+                                        __nums.append(str(_num))
+                                    if _id < len(_tuples) - 1:
+                                        _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
+                                    else:
+                                        __sec_name = '_'.join(__nums)
+                                        _sec_names.append(__sec_name)
+
+                            _range_sec_names = []
+                            _get_sec_names(_range_sec_names, range_tuples, 0, [])
+                            _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in _range_sec_names]
+                            _curr_template_id += 1
+                        elif ',' in _sec_name:
+                            _templ_sec_names = _sec_name.split(',')
                             _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in _templ_sec_names]
                             _curr_template_id += 1
                         else:
@@ -795,6 +826,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             if end_line_num > start_line_num:
                                 _str = '{} -> {}'.format(_str, end_line_num)
                             _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
+
+                        print(_str)
+                        pass
 
                     invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
                     if invalid_cfg_sec:
