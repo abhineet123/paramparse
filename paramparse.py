@@ -611,32 +611,35 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                         """range based section names
                         """
-                        if _sec_name.startswith('(') or _sec_name.startswith('range(') or _sec_name.startswith('irange(') or ':' in _sec_name:
+                        if _sec_name.startswith('(') or _sec_name.startswith('range(') or _sec_name.startswith(
+                                'irange(') or ':' in _sec_name:
                             # assert ',' not in _sec_name, \
                             #     "Combining template and range sections is not supported currently"
-                            range_tokens = _sec_name.split('_')
-                            range_tuples = tuple(map(str_to_tuple, range_tokens))
-                            # range_tuples = []
-                            # for token in range_tokens:
-                            #     range_tuple = str_to_tuple(token)
-                            #     range_tuples.append(range_tuple)
+                            """in case there are multiple ranges or lists"""
+                            in_range_sec_names = _sec_name.split('+')
+                            out_range_sec_names = []
+                            for range_sec_name in in_range_sec_names:
+                                range_tokens = range_sec_name.split('_')
+                                range_tuples = tuple(map(str_to_tuple, range_tokens))
 
-                            def _get_sec_names(_sec_names, _tuples, _id, _nums):
-                                for _num in _tuples[_id]:
-                                    __nums = _nums[:]
-                                    if _num < 0:
-                                        __nums.append('n' + str(abs(_num)))
-                                    else:
-                                        __nums.append(str(_num))
-                                    if _id < len(_tuples) - 1:
-                                        _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
-                                    else:
-                                        __sec_name = '_'.join(__nums)
-                                        _sec_names.append(__sec_name)
+                                def _get_sec_names(_sec_names, _tuples, _id, _nums):
+                                    for _num in _tuples[_id]:
+                                        __nums = _nums[:]
+                                        if _num < 0:
+                                            __nums.append('n' + str(abs(_num)))
+                                        else:
+                                            __nums.append(str(_num))
+                                        if _id < len(_tuples) - 1:
+                                            _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
+                                        else:
+                                            __sec_name = '_'.join(__nums)
+                                            _sec_names.append(__sec_name)
 
-                            _range_sec_names = []
-                            _get_sec_names(_range_sec_names, range_tuples, 0, [])
-                            _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in _range_sec_names]
+                                curr_range_sec_names = []
+                                _get_sec_names(curr_range_sec_names, range_tuples, 0, [])
+                                out_range_sec_names += curr_range_sec_names
+
+                            _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in out_range_sec_names]
                             _curr_template_id += 1
                         elif ',' in _sec_name:
                             _templ_sec_names = _sec_name.split(',')
