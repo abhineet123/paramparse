@@ -611,15 +611,16 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                         """range based section names
                         """
-                        if _sec_name.startswith('(') or _sec_name.startswith('range(') or _sec_name.startswith(
-                                'irange(') or ':' in _sec_name:
+                        # any(map(_sec_name.startswith, ['(', '[', 'range(', 'irange(']))
+                        if _sec_name.startswith('(') or _sec_name.startswith('[') or ':' in _sec_name or \
+                                _sec_name.startswith('range(') or _sec_name.startswith('irange('):
                             # assert ',' not in _sec_name, \
                             #     "Combining template and range sections is not supported currently"
                             """in case there are multiple ranges or lists"""
                             in_range_sec_names = _sec_name.split('+')
                             out_range_sec_names = []
-                            for range_sec_name in in_range_sec_names:
-                                range_tokens = range_sec_name.split('_')
+                            for in_range_sec_name in in_range_sec_names:
+                                range_tokens = in_range_sec_name.split('_')
                                 range_tuples = tuple(map(str_to_tuple, range_tokens))
 
                                 def _get_sec_names(_sec_names, _tuples, _id, _nums):
@@ -635,9 +636,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                                             __sec_name = '_'.join(__nums)
                                             _sec_names.append(__sec_name)
 
-                                curr_range_sec_names = []
-                                _get_sec_names(curr_range_sec_names, range_tuples, 0, [])
-                                out_range_sec_names += curr_range_sec_names
+                                _out_range_sec_names = []
+                                _get_sec_names(_out_range_sec_names, range_tuples, 0, [])
+                                out_range_sec_names += _out_range_sec_names
 
                             _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in out_range_sec_names]
                             _curr_template_id += 1
@@ -688,8 +689,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     for _id, _sec in invalid_sec:
                         _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list
                         if not _node_matches:
-                            raise AssertionError('Section {} not found in cfg file {} with sections:\n{}'.format(
-                                _sec, _cfg, sections))
+                            raise AssertionError('Section {} not found in cfg file {}'.format(
+                                _sec, _cfg))
                         # curr_specific_sec = []
                         for _node in _node_matches:  # type:Node
                             specific_sec.append((_node.seq_id, _node.name))
