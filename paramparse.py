@@ -27,7 +27,7 @@ class Node:
 
     def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None,
                  # marker=None,
-                 line_id=None, seq_id=None):
+                 line_id=None, seq_id=None, template_id=None):
         """
 
         :param str heading_text:
@@ -45,6 +45,7 @@ class Node:
         # self.marker = marker
         self.line_id = line_id
         self.seq_id = seq_id
+        self.template_id = template_id
 
         if parent is None:
             self.is_root = True
@@ -89,7 +90,7 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
     """
     _id = _start_id
     while _id < n_headings:
-        _heading, line_id, curr_level, _ = _headings[_id]
+        _heading, line_id, curr_level, template_id = _headings[_id]
         assert _heading, "Invalid empty heading found"
 
         # curr_level = _heading[0].count('#') + 1
@@ -105,7 +106,7 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
                 parent_text = '{}/{}'.format(parent_text, _root_node.parent_text)
         new_node = Node(_heading, parent=_root_node, orig_text=_heading, parent_text=parent_text,
                         # marker=_heading[0],
-                        line_id=line_id, seq_id=_id)
+                        line_id=line_id, seq_id=_id, template_id=template_id)
         nodes[(_heading, line_id)] = new_node
 
         ___id = _find_children(nodes, _headings, curr_level, _id + 1, new_node, n_headings)
@@ -563,10 +564,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         args_in = []
         for _cfg in cfg:
             _cfg_sec = []
-            if ':' in _cfg:
-                _cfg = _cfg.split(':')
-                _cfg_sec = [k for k in list(_cfg[1:]) if k]
-                _cfg = _cfg[0]
+            if ':' not in _cfg:
+                _cfg = '{}:__common__'.format(_cfg)
+
+            _cfg = _cfg.split(':')
+            _cfg_sec = [k for k in list(_cfg[1:]) if k]
+            _cfg = _cfg[0]
 
             """optional leading and trailing for better visible discrimination between cfg files and sections 
             in commands stored in syntax highlighted markdown files"""
