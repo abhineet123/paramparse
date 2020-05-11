@@ -799,8 +799,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             _curr_sec_full_name = curr_node.full_name
                             for i, _curr_sec_arg in enumerate(_curr_sec_args):
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
-                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__',
-                                                                              str(float(_curr_sec_name) / 100.0))
+
+                                if '__name_ratio__' in _curr_sec_args[i]:
+                                    ratio_str = str(float(_curr_sec_name) / 100.0)
+                                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__',ratio_str)
+
                                 _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
                                                                               ','.join(_curr_sec_name.split('_')))
                                 if '__name_list_ratio__' in _curr_sec_args[i]:
