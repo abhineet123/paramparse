@@ -594,6 +594,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 for __name in __sec_names[1:]:
                     included_secs = [__name, ] + _cfg_sec[__sec_id+1:end_include_id]
                     repeated_cfgs.append((_cfg, included_secs))
+            _cfg_sec = [k for k in _cfg_sec if k]
             cfg_file_list.append((_cfg, _cfg_sec))
             cfg_file_list += repeated_cfgs
 
