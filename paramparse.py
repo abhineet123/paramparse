@@ -585,16 +585,32 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if _cfg:
                     raise IOError('cfg file does not exist: {:s}'.format(_cfg))
             repeated_cfgs = []
+
             repeated_sec_ids = [__sec_id for __sec_id, __sec in enumerate(_cfg_sec) if '+' in __sec]
 
+            excluded_ids = []
+
             for i, __sec_id in enumerate(repeated_sec_ids):
-                __sec_names = _cfg_sec[__sec_id].split('+')
-                _cfg_sec[__sec_id] =__sec_names[0]
-                end_include_id = repeated_sec_ids[i+1] if i < len(repeated_sec_ids) - 1 else len(_cfg_sec)
-                for __name in __sec_names[1:]:
-                    included_secs = [__name, ] + _cfg_sec[__sec_id+1:end_include_id]
+
+                if _cfg_sec[__sec_id].startswith('++'):
+                    """these sections are exclusive to the repeated cfg files so excluded from the default one"""
+                    _exclusive_secs = 1
+                    __sec_names = _cfg_sec[__sec_id].rstrip('+').split('+')
+                    repeat_sec_names = __sec_names
+                else:
+                    _exclusive_secs = 1
+                    __sec_names = _cfg_sec[__sec_id].split('+')
+                    repeat_sec_names = __sec_names[1:]
+                _cfg_sec[__sec_id] = __sec_names[0]
+                start_include_id = __sec_id + 1
+                end_include_id = repeated_sec_ids[i + 1] if i < len(repeated_sec_ids) - 1 else len(_cfg_sec)
+                for __name in repeat_sec_names:
+                    included_secs = [__name, ] + _cfg_sec[start_include_id:end_include_id]
                     repeated_cfgs.append((_cfg, included_secs))
-            _cfg_sec = [k for k in _cfg_sec if k]
+                if _exclusive_secs:
+                    excluded_ids += list(range(start_include_id, end_include_id))
+
+            _cfg_sec = [k for i, k in enumerate(_cfg_sec) if k and i not in excluded_ids]
             cfg_file_list.append((_cfg, _cfg_sec))
             cfg_file_list += repeated_cfgs
 
@@ -819,7 +835,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                             if '__name_ratio__' in _curr_sec_args[i]:
                                 ratio_str = str(float(_curr_sec_name) / 100.0)
-                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__',ratio_str)
+                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
 
                             _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
                                                                           ','.join(_curr_sec_name.split('_')))
