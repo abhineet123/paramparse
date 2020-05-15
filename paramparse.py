@@ -595,13 +595,14 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if _cfg_sec[__sec_id].startswith('++'):
                     """these sections are exclusive to the repeated cfg files so excluded from the default one"""
                     _exclusive_secs = 1
-                    __sec_names = _cfg_sec[__sec_id].rstrip('+').split('+')
+                    __sec_names = _cfg_sec[__sec_id][2:].split('+')
                     repeat_sec_names = __sec_names
+                    _cfg_sec[__sec_id] = ''
                 else:
                     _exclusive_secs = 1
                     __sec_names = _cfg_sec[__sec_id].split('+')
                     repeat_sec_names = __sec_names[1:]
-                _cfg_sec[__sec_id] = __sec_names[0]
+                    _cfg_sec[__sec_id] = __sec_names[0]
                 start_include_id = __sec_id + 1
                 end_include_id = repeated_sec_ids[i + 1] if i < len(repeated_sec_ids) - 1 else len(_cfg_sec)
                 for __name in repeat_sec_names:
@@ -610,7 +611,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if _exclusive_secs:
                     excluded_ids += list(range(start_include_id, end_include_id))
 
-            _cfg_sec = [k for i, k in enumerate(_cfg_sec) if k and i not in excluded_ids]
+            _cfg_sec = [k for i, k in enumerate(_cfg_sec) if i not in excluded_ids and k]
             cfg_file_list.append((_cfg, _cfg_sec))
             cfg_file_list += repeated_cfgs
 
