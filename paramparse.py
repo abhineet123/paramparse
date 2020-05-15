@@ -599,7 +599,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     repeat_sec_names = __sec_names
                     _cfg_sec[__sec_id] = ''
                 else:
-                    _exclusive_secs = 1
+                    _exclusive_secs = 0
                     __sec_names = _cfg_sec[__sec_id].split('+')
                     repeat_sec_names = __sec_names[1:]
                     _cfg_sec[__sec_id] = __sec_names[0]
