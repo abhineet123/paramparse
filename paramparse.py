@@ -383,7 +383,7 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
     :return:
     """
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
-                     and not attr.startswith("__")])
+                     and not attr.startswith("_")])
     if obj_name:
         if root_name:
             root_name = '{:s}.{:s}'.format(root_name, obj_name)
