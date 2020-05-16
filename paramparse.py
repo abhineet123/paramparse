@@ -16,6 +16,91 @@ except ImportError:
     import pickle
 
 
+class MultiString(str):
+    def __init__(self, val, sep):
+        str.__init__(val)
+        self._sep = sep
+
+    @staticmethod
+    def _process(_str, _sep):
+        """
+
+        :param str _str:
+        :param str _sep:
+        :rtype:  str
+        """
+        tokens = _str.split(_sep)
+        tokens = [strip_quotes(k) for k in tokens]
+        token_str = _sep.join(tokens)
+        return token_str
+
+
+class MultiPath(MultiString):
+    def __init__(self, val=''):
+        MultiString.__init__(self, val, '_')
+
+    @staticmethod
+    def process(_str):
+        """
+
+        :param str _str:
+        :rtype:  str
+        """
+        return MultiString._process(_str, _sep='_')
+
+class MultiCFG(MultiString):
+    def __init__(self, val=''):
+        MultiString.__init__(self, val, '::')
+
+    @staticmethod
+    def process(_str):
+        """
+
+        :param str _str:
+        :rtype:  str
+        """
+        return MultiString._process(_str, _sep='::')
+
+    @staticmethod
+    def to_dict(cfgs, valid_ids):
+        """
+        fill in missing cfg
+        :param str cfgs:
+        :param int n_iters:
+        :rtype: dict
+        """
+        _cfgs_out = {}
+        if not cfgs:
+            return _cfgs_out
+
+        # if ',,' not in cfgs:
+        #     cfgs = '{},,'.format(cfgs)
+        # cfg_tokens = [k for k in cfgs.split(',,') if k]
+
+        # cfgs2 = cfgs.replace('",', '::').replace('"', '')
+
+        cfg_tokens = cfgs.split('::')
+
+        for i, cfg_token in enumerate(cfg_tokens):
+            # if '::' not in _cfg:
+            #     cfg_id = i
+            # else:
+            #     cfg_id, _cfg = _cfg.split('::')
+            #     cfg_id = int(cfg_id)
+
+            _cfg_list = cfg_token.split(':')
+            cfg_id = _cfg_list[0]
+
+            assert cfg_id in valid_ids, f"Invalid cfg_id: {cfg_id} in cfg token: {cfg_token}"
+
+            cfg_str = ':'.join(_cfg_list[1:])
+            try:
+                _cfgs_out[cfg_id] = f'{_cfgs_out[cfg_id]},{cfg_str}'
+            except KeyError:
+                _cfgs_out[cfg_id] = cfg_str
+        return _cfgs_out
+
+
 class Node:
     """
     :type parent: Node
@@ -338,7 +423,7 @@ def help_from_docs(obj, member):
     return _help
 
 
-_supported_types = (int, bool, float, str, tuple, list, dict, tuple, list, dict)
+_supported_types = (int, bool, float, str, tuple, list, dict, tuple, list, dict, MultiPath, MultiCFG)
 
 
 def type_from_docs(obj, member):
@@ -354,7 +439,11 @@ def type_from_docs(obj, member):
     relevant_lines = [k for k in doc_lines if any(k.startswith(templ[0]) for templ in templs)]
 
     if not relevant_lines:
-        return None
+        templs2 = [(':type {}: {}'.format(member, k.__name__), k) for k in _supported_types]
+        relevant_lines = [k for k in doc_lines if any(k.startswith(templ[0]) for templ in templs)]
+
+        if not relevant_lines:
+            return None
 
     if len(relevant_lines) > 1:
         print('Multiple matching docstring lines for {}:\n{}'.format(member, pformat(relevant_lines)))
@@ -393,22 +482,24 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
         if member == 'help':
             continue
         default_val = getattr(obj, member)
-        if default_val is None:
-            member_type = type_from_docs(obj, member)
-            if member_type is None:
+        member_type = type_from_docs(obj, member)
+        if member_type is None:
+            if default_val is None:
                 print('No type found in docstring for param {} with default as None'.format(member))
                 continue
             # print('Deduced type {} from docstring for param {} with default as None'.format(member_type, member))
-        else:
-            member_type = type(default_val)
+            else:
+                member_type = type(default_val)
 
-        if member_type in (int, bool, float, str, tuple, list, dict):
-            member_to_type[member] = member_type
+        if member_type in (int, bool, float, str, tuple, list, dict, MultiCFG, MultiPath):
 
             if root_name:
                 member_param_name = '{:s}.{:s}'.format(root_name, member)
             else:
                 member_param_name = '{:s}'.format(member)
+
+            member_to_type[member_param_name] = member_type
+
             if hasattr(obj, 'help') and member in obj.help:
                 _help = obj.help[member]
                 if not isinstance(_help, str):
@@ -422,12 +513,17 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
             elif member_type is dict:
                 parser.add_argument('--{:s}'.format(member_param_name), type=json.loads, default=default_val,
                                     help=_help, metavar='')
+            elif member_type in (MultiCFG, MultiPath):
+                parser.add_argument('--{:s}'.format(member_param_name), type=member_type.process, default=default_val,
+                                    help=_help, metavar='')
             elif member_type is str:
                 parser.add_argument('--{:s}'.format(member_param_name), type=strip_quotes, default=default_val,
                                     help=_help, metavar='')
-            else:
+            elif member_type in (int, bool, float, str):
                 parser.add_argument('--{:s}'.format(member_param_name), type=str_to_basic_type, default=default_val,
                                     help=_help, metavar='')
+            else:
+                raise AssertionError('Something weird going on with member_type: {}'.format(member_type))
         else:
             # parameter is itself an instance of some other parameter class so its members must
             # be processed recursively
@@ -955,13 +1051,25 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if pf:
                     _name = '{}.{}'.format(pf, _name)
                 try:
+                    arg_type = member_to_type[_name]
+                except KeyError:
+                    raise ValueError('Invalid param name {} in argument {}'.format(_name, _arg))
+                assert arg_type in (tuple, list, MultiPath, MultiCFG), \
+                    "incremental value specification found for argument {} of invalid type: {}".format(_name, arg_type)
+                try:
                     old_val = _args_dict[_name]
                 except KeyError:
                     pass
                     # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
                     #     _name, _arg))
                 else:
-                    _val = '{},{}'.format(old_val, _val)
+                    if arg_type is MultiPath:
+                        sep = '_'
+                    elif arg_type is MultiCFG:
+                        sep = '::'
+                    else:
+                        sep = ','
+                    _val = '{}{}{}'.format(old_val, sep, _val)
                     pass
             else:
                 try:
