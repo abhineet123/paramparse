@@ -44,9 +44,10 @@ class MultiPath(MultiString):
         """
 
         :param str _str:
-        :rtype:  str
+        :rtype:  MultiPath
         """
-        return MultiString._process(_str, _sep='_')
+        return MultiPath(MultiString._process(_str, _sep='_'))
+
 
 class MultiCFG(MultiString):
     def __init__(self, val=''):
@@ -57,9 +58,9 @@ class MultiCFG(MultiString):
         """
 
         :param str _str:
-        :rtype:  str
+        :rtype:  MultiCFG
         """
-        return MultiString._process(_str, _sep='::')
+        return MultiCFG(MultiString._process(_str, _sep='::'))
 
     @staticmethod
     def to_dict(cfgs, valid_ids):
