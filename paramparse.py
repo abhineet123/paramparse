@@ -925,31 +925,30 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                     _curr_sec_args = file_args[_start_id:_end_id]
 
-                    if _template_id:
-                        _curr_sec_name = sections[_sec_id]
-                        _curr_sec_full_name = curr_node.full_name
-                        for i, _curr_sec_arg in enumerate(_curr_sec_args):
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                    _curr_sec_name = sections[_sec_id]
+                    _curr_sec_full_name = curr_node.full_name
+                    for i, _curr_sec_arg in enumerate(_curr_sec_args):
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
 
-                            if '__name_ratio__' in _curr_sec_args[i]:
-                                ratio_str = str(float(_curr_sec_name) / 100.0)
-                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
+                        if '__name_ratio__' in _curr_sec_args[i]:
+                            ratio_str = str(float(_curr_sec_name) / 100.0)
+                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
 
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
-                                                                          ','.join(_curr_sec_name.split('_')))
-                            if '__name_list_ratio__' in _curr_sec_args[i]:
-                                temp = _curr_sec_name.split('_')
-                                for k_id, k in enumerate(temp):
-                                    if k.startswith('n'):
-                                        k = k.replace('n', '-')
-                                    k = str(float(k) / 100.0)
-                                    temp[k_id] = k
-                                _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
+                                                                      ','.join(_curr_sec_name.split('_')))
+                        if '__name_list_ratio__' in _curr_sec_args[i]:
+                            temp = _curr_sec_name.split('_')
+                            for k_id, k in enumerate(temp):
+                                if k.startswith('n'):
+                                    k = k.replace('n', '-')
+                                k = str(float(k) / 100.0)
+                                temp[k_id] = k
+                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
 
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
-                                                                          ':'.join(_curr_sec_name.split('_')))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
+                                                                      ':'.join(_curr_sec_name.split('_')))
 
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
 
                     _sec_args += _curr_sec_args
 
