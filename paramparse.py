@@ -7,6 +7,7 @@ import argparse
 from ast import literal_eval
 from pprint import pformat
 from datetime import datetime
+from collections import defaultdict
 
 import numpy as np
 
@@ -111,9 +112,9 @@ class Node:
     :type parent_text: str
     """
 
-    def __init__(self, heading_text, parent=None, orig_text=None, parent_text=None,
+    def __init__(self, heading_text='', parent=None, orig_text=None, parent_text=None,
                  # marker=None,
-                 line_id=None, seq_id=None, template_id=None):
+                 line_id=None, end_id=None, seq_id=None, curr_level=None, template_id=None):
         """
 
         :param str heading_text:
@@ -125,13 +126,21 @@ class Node:
         :param int seq_id:
         """
         self.name = heading_text
+        if not self.name:
+            self.name = '__root__'
+
         self.parent = parent
         self.orig_text = orig_text
         self.parent_text = parent_text
         # self.marker = marker
         self.line_id = line_id
+        self.end_id = end_id
         self.seq_id = seq_id
+        self.curr_level = curr_level
         self.template_id = template_id
+        self.children = []
+
+        self.added = 0
 
         if parent is None:
             self.is_root = True
@@ -139,6 +148,22 @@ class Node:
         else:
             self.is_root = False
             self.full_name = parent.name + self.name
+            parent.children.append(self)
+
+    def get_descendants(self):
+        descendants = []
+        for child in self.children:
+            descendants.append(child)
+            descendants += child.get_descendants()
+        return descendants
+
+    def get_ancestors(self):
+        ancestors = []
+        parent = self.parent
+        while parent is not None and not parent.is_root:
+            ancestors.append(parent)
+            parent = parent.parent
+        return ancestors
 
 
 def match_opt(params, opt_name, print_name=''):
@@ -163,10 +188,11 @@ def match_opt(params, opt_name, print_name=''):
     return matching_val[0]
 
 
-def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headings):
+def _find_children(nodes, nodes_by_fullname, _headings, root_level, _start_id, _root_node, n_headings):
     """
 
     :param dict nodes:
+    :param defaultdict(list) | None nodes_by_fullname:
     :param _headings:
     :param root_level:
     :param _start_id:
@@ -175,8 +201,9 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
     :return:
     """
     _id = _start_id
+
     while _id < n_headings:
-        _heading, line_id, curr_level, template_id = _headings[_id]
+        _heading, line_id, end_id, curr_level, template_id = _headings[_id]
         assert _heading, "Invalid empty heading found"
 
         # curr_level = _heading[0].count('#') + 1
@@ -192,10 +219,16 @@ def _find_children(nodes, _headings, root_level, _start_id, _root_node, n_headin
                 parent_text = '{}/{}'.format(parent_text, _root_node.parent_text)
         new_node = Node(_heading, parent=_root_node, orig_text=_heading, parent_text=parent_text,
                         # marker=_heading[0],
-                        line_id=line_id, seq_id=_id, template_id=template_id)
-        nodes[(_heading, line_id)] = new_node
+                        line_id=line_id, end_id=end_id, seq_id=_id, curr_level=curr_level, template_id=template_id)
+        nodes[_id] = new_node
 
-        ___id = _find_children(nodes, _headings, curr_level, _id + 1, new_node, n_headings)
+        if nodes_by_fullname is not None:
+            # assert new_node.full_name not in nodes_by_fullname, \
+            #     "Duplicate nodes found with full_name {}:\n{}\n{}".format(new_node.full_name, new_node.name,
+            #                                                               nodes_by_fullname[new_node.full_name].name)
+            nodes_by_fullname[new_node.full_name].append(new_node)
+
+        ___id = _find_children(nodes, nodes_by_fullname, _headings, curr_level, _id + 1, new_node, n_headings)
         # nodes += child_nodes
         _id = ___id
 
@@ -601,6 +634,159 @@ def _process_args_from_parser(obj, args, member_to_type):
         _assign_arg(obj, key_parts, 0, val, member_to_type, '')
 
 
+def read_cfg(_cfg):
+    print('Reading parameters from {:s}'.format(_cfg))
+    file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
+    file_args_offset = 0
+
+    if not file_args[0].startswith('##'):
+        file_args.insert(0, '##')
+        file_args_offset = 1
+    _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1, 0)
+                 for i, k in enumerate(file_args) if k.startswith('##')]
+
+    n_file_args = len(file_args)
+    n_sections = len(_sections)
+
+    """common sections"""
+    _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
+
+    """add section end IDs as the start IDs of the next section"""
+    _sections = [(k[0], k[1], _sections[i + 1][1] if i < n_sections - 1 else n_file_args, k[2], k[3])
+                 for i, k in enumerate(_sections)]
+
+    # """default sections
+    # """
+    # _default_sections, _default_section_ids = zip(*[
+    #     (k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections) if k[0].endswith('__')])
+    # for i, j in enumerate(_default_section_ids):
+    #     k = _sections[i]
+    #     _sections[j] = (_default_sections[i], k[1], k[2])
+
+    """template sections"""
+    _curr_template_id = 1
+    # _sec_id_orig = _sec_id_temp = 0
+    # for i, _sec in enumerate(_sections):
+    _all_temp_sections = {}
+    pass_id = 0
+    while True:
+
+        n_sections = len(_sections)
+        curr_root = Node()
+        temp_nodes = {}  # :type dict(tuple, Node)
+        _find_children(temp_nodes, None, _sections, 0, 0, curr_root, n_sections)
+
+        _temp_sections = []
+        # _added_sections = {}
+        found_new_sections = 0
+        for i, _sec in enumerate(_sections):
+            # if _sec_id_temp >= len(_temp_sections):
+            #     if _sec_id_orig >= len(_sections):
+            #         break
+            #     else:
+            #         _sec = _sections[_sec_id_orig]
+            #         _sec_id_orig += 1
+            # else:
+            #     _sec = _temp_sections[_sec_id_temp]
+            #     _sec_id_temp += 1
+
+            # if (_sec[1], _sec[2]) in _added_sections:
+            #     """this section has already been added as a descendant of a previous template section
+            #     """
+            #     continue
+            # _added_sections[(_sec[1], _sec[2])] = 1
+
+            _sec_name = _sec[0]
+
+            prelim_node = temp_nodes[i]
+
+            if prelim_node.added:
+                """this section has already been added in this pass as a descendant of a 
+                previous template section
+                """
+                continue
+
+            prelim_node.added = 1
+
+            """range based section names
+            """
+            _templ_sec_names = []
+            # any(map(_sec_name.startswith, ['(', '[', 'range(', 'irange(']))
+            if _sec_name.startswith('(') or _sec_name.startswith('[') or ':' in _sec_name or \
+                    _sec_name.startswith('range(') or _sec_name.startswith('irange('):
+                # assert ',' not in _sec_name, \
+                #     "Combining template and range sections is not supported currently"
+                """in case there are multiple ranges or lists"""
+                in_range_sec_names = _sec_name.split('+')
+                for in_range_sec_name in in_range_sec_names:
+                    range_tokens = in_range_sec_name.split('_')
+                    range_tuples = tuple(map(str_to_tuple, range_tokens))
+
+                    def _get_sec_names(_sec_names, _tuples, _id, _nums):
+                        for _num in _tuples[_id]:
+                            __nums = _nums[:]
+                            if _num < 0:
+                                __nums.append('n' + str(abs(_num)))
+                            else:
+                                __nums.append(str(_num))
+                            if _id < len(_tuples) - 1:
+                                _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
+                            else:
+                                __sec_name = '_'.join(__nums)
+                                _sec_names.append(__sec_name)
+
+                    _out_range_sec_names = []
+                    _get_sec_names(_out_range_sec_names, range_tuples, 0, [])
+                    _templ_sec_names += _out_range_sec_names
+            elif ',' in _sec_name:
+                _templ_sec_names = _sec_name.split(',')
+
+            if not _templ_sec_names:
+                _temp_sections.append(_sec)
+                continue
+
+            found_new_sections = 1
+            descendants = prelim_node.get_descendants()
+            if descendants:
+                # def is_template(__sec_name):
+                #     return __sec_name.startswith('(') or __sec_name.startswith(
+                #         '[') or ':' in __sec_name or \
+                #            __sec_name.startswith('range(') or __sec_name.startswith(
+                #         'irange(') or ',' in __sec_name
+
+                for k_id, k in enumerate(_templ_sec_names):
+                    _temp_sections.append((k, _sec[1], _sec[2], _sec[3], _curr_template_id))
+                    for descendant in descendants:  # type: Node
+                        _temp_sections.append(
+                            (descendant.name, descendant.line_id, descendant.end_id, descendant.curr_level, 0))
+                        descendant.added = 1
+                        # if k_id == 0:
+                        #     # assert not is_template(descendant.name), \
+                        #     #     f"template section: {descendant.name} used as a descendant of " \
+                        #     #         f"another: {_sec_name}"
+                        #     _added_sections[(descendant.line_id, descendant.curr_level)] = 1
+            else:
+                _temp_sections += [(k, _sec[1], _sec[2], _sec[3], _curr_template_id) for k in _templ_sec_names]
+            _curr_template_id += 1
+
+        if not found_new_sections:
+            break
+
+        _sections = _temp_sections
+        _all_temp_sections[pass_id] = _temp_sections
+        pass_id += 1
+
+    time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+    root_sec_name = "__root_{}__".format(time_stamp)
+    curr_root = Node(root_sec_name)
+    n_sections = len(_sections)
+    nodes = {}  # :type dict(tuple, Node)
+    nodes_by_fullname = defaultdict(list)
+    _find_children(nodes, nodes_by_fullname, _sections, 0, 0, curr_root, n_sections)
+
+    return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+
+
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             prog='', usage='%(prog)s [options]', allow_unknown=0):
     """
@@ -665,6 +851,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             if ':' not in _cfg:
                 _cfg = '{}:__common__'.format(_cfg)
 
+            _cfg = _cfg.replace('-', '')
             _cfg = _cfg.split(':')
             _cfg_sec = [k for k in list(_cfg[1:]) if k]
             _cfg = _cfg[0]
@@ -704,288 +891,268 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 end_include_id = repeated_sec_ids[i + 1] if i < len(repeated_sec_ids) - 1 else len(_cfg_sec)
                 for __name in repeat_sec_names:
                     included_secs = [__name, ] + _cfg_sec[start_include_id:end_include_id]
-                    repeated_cfgs.append((_cfg, included_secs))
+                    repeated_cfgs.append((_cfg, included_secs, 1))
                 if _exclusive_secs:
                     excluded_ids += list(range(start_include_id, end_include_id))
 
             _cfg_sec = [k for i, k in enumerate(_cfg_sec) if i not in excluded_ids and k]
-            cfg_file_list.append((_cfg, _cfg_sec))
+            cfg_file_list.append((_cfg, _cfg_sec, 0))
             cfg_file_list += repeated_cfgs
 
         """process each cfg file and its sections"""
         args_in = []
-        for _cfg, _cfg_sec in cfg_file_list:
-            print('Reading parameters from {:s}'.format(_cfg))
-            file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
-            n_file_args = len(file_args)
-            file_args_offset = 0
-            if _cfg_sec:
-                if not file_args[0].startswith('##'):
-                    file_args.insert(0, '##')
-                    n_file_args += 1
-                    file_args_offset = 1
-                _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1, 0)
-                             for i, k in enumerate(file_args) if k.startswith('##')]
-
-                """common sections"""
-                _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
-
-                # """default sections
-                # """
-                # _default_sections, _default_section_ids = zip(*[
-                #     (k[0].rstrip('__').strip(), i) for i, k in enumerate(_sections) if k[0].endswith('__')])
-                # for i, j in enumerate(_default_section_ids):
-                #     k = _sections[i]
-                #     _sections[j] = (_default_sections[i], k[1], k[2])
-
-                _temp_sections = []
-                _curr_template_id = 1
-                for i, _sec in enumerate(_sections):
-                    _sec_name = _sec[0]
-
-                    """range based section names
-                    """
-                    # any(map(_sec_name.startswith, ['(', '[', 'range(', 'irange(']))
-                    if _sec_name.startswith('(') or _sec_name.startswith('[') or ':' in _sec_name or \
-                            _sec_name.startswith('range(') or _sec_name.startswith('irange('):
-                        # assert ',' not in _sec_name, \
-                        #     "Combining template and range sections is not supported currently"
-                        """in case there are multiple ranges or lists"""
-                        in_range_sec_names = _sec_name.split('+')
-                        out_range_sec_names = []
-                        for in_range_sec_name in in_range_sec_names:
-                            range_tokens = in_range_sec_name.split('_')
-                            range_tuples = tuple(map(str_to_tuple, range_tokens))
-
-                            def _get_sec_names(_sec_names, _tuples, _id, _nums):
-                                for _num in _tuples[_id]:
-                                    __nums = _nums[:]
-                                    if _num < 0:
-                                        __nums.append('n' + str(abs(_num)))
-                                    else:
-                                        __nums.append(str(_num))
-                                    if _id < len(_tuples) - 1:
-                                        _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
-                                    else:
-                                        __sec_name = '_'.join(__nums)
-                                        _sec_names.append(__sec_name)
-
-                            _out_range_sec_names = []
-                            _get_sec_names(_out_range_sec_names, range_tuples, 0, [])
-                            out_range_sec_names += _out_range_sec_names
-
-                        _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in out_range_sec_names]
-                        _curr_template_id += 1
-                    elif ',' in _sec_name:
-                        _templ_sec_names = _sec_name.split(',')
-                        _temp_sections += [(k, _sec[1], _sec[2], _curr_template_id) for k in _templ_sec_names]
-                        _curr_template_id += 1
-                    else:
-                        _temp_sections.append(_sec)
-
-                _sections = _temp_sections
-
-                time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
-                root_sec_name = "__root_{}__".format(time_stamp)
-                curr_root = Node(root_sec_name)
-                n_sections = len(_sections)
-                nodes = {}  # :type dict(tuple, Node)
-                _find_children(nodes, _sections, 0, 0, curr_root, n_sections)
+        prev_cfg_data = []
+        for _cfg, _cfg_sec, _cfg_repeat in cfg_file_list:
+            if _cfg_repeat:
+                assert prev_cfg_data, "repeat cfg found without previous cfg data: {}".format(_cfg)
+                print('Processing repeat parameters from {:s}'.format(_cfg))
+            else:
+                prev_cfg_data = read_cfg(_cfg)
 
                 # _sections = [(k, i) for k, i in _sections]
 
-                excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
-                sections, section_ids, template_ids = zip(
-                    *[(_sec, i, _template_id) for _sec, i, _, _template_id in _sections
-                      if _sec not in excluded_cfg_sec])
+            nodes, nodes_by_fullname, _sections, _file_args, file_args_offset, root_sec_name = prev_cfg_data
 
-                # sections, section_ids = [k[0] for k in _sections], [k[1] for k in _sections]
+            n_file_args = len(_file_args)
 
-                if excluded_cfg_sec:
-                    print('Excluding section(s):\n{}'.format(pformat(excluded_cfg_sec)))
-                    _cfg_sec = [_sec for _sec in _cfg_sec if _sec not in excluded_cfg_sec]
-                    if not _cfg_sec:
-                        print('No included sections found for cfg file {} so including all sections'.format(_cfg))
-                        _cfg_sec = sections
+            """remove excluded sections"""
+            excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
+            sections, section_line_ids, section_end_ids, section_seq_ids, section_template_ids = zip(
+                *[(_sec[0], _sec[1], _sec[2], i, _sec[4]) for i, _sec in enumerate(_sections)
+                  if _sec not in excluded_cfg_sec])
 
-                """add common sections
-                """
-                common_sections = [s for s in sections if s.startswith('__') and s.endswith('__')]
-                _cfg_sec += common_sections
+            if excluded_cfg_sec:
+                print('Excluding section(s):\n{}'.format(pformat(excluded_cfg_sec)))
+                _cfg_sec = [_sec for _sec in _cfg_sec if _sec not in excluded_cfg_sec]
+                assert _cfg_sec, 'No included sections found for {}'.format(_cfg)
 
-                """unique section names
-                """
-                _cfg_sec = list(set(_cfg_sec))
+            """add common sections"""
+            common_sections = [s for s in sections if s.startswith('__') and s.endswith('__')]
+            _cfg_sec += common_sections
 
-                invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
-                specific_sec = []
-                specific_sec_ids = []
-                for _id, _sec in invalid_sec:
-                    _node_matches = [nodes[k] for k in nodes if nodes[k].full_name == _sec]  # type: list
-                    if not _node_matches:
-                        raise AssertionError('Section {} not found in cfg file {}'.format(
-                            _sec, _cfg))
-                    # curr_specific_sec = []
-                    for _node in _node_matches:  # type:Node
-                        specific_sec.append((_node.seq_id, _node.name))
-                        specific_sec.append((_node.parent.seq_id, _node.parent.name))
+            """unique section names"""
+            _cfg_sec = list(set(_cfg_sec))
 
-                        specific_sec_ids.append(_node.seq_id)
-                        specific_sec_ids.append(_node.parent.seq_id)
+            """specific sections from full names"""
+            invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
+            specific_sec = []
+            specific_sec_ids = []
 
-                        # _sec_matches = []
-                        # curr_node = _node
-                        # while curr_node.parent is not None:
-                        #     _sec_matches.append((curr_node.seq_id, curr_node.name))
-                        #     curr_node = curr_node.parent
-                        # specific_sec += _sec_matches[::-1]
-                    # specific_sec[_sec] = curr_specific_sec
+            # _node_matches = {( _id, _sec) : nodes[k] for _id, _sec in invalid_sec for k in nodes
+            #                  if nodes[k].full_name == _sec}
+            for _id, _sec in invalid_sec:
+                try:
+                    _node_matches = nodes_by_fullname[_sec]  # type: list
+                except KeyError:
+                    raise AssertionError('Section {} not found in {}'.format(
+                        _sec, _cfg))
 
-                    _cfg_sec[_id] = ''
+                # curr_specific_sec = []
+                for _node in _node_matches:  # type:Node
 
-                # valid_check = [_sec in sections for _sec in _cfg_sec]
-                # assert all(valid_check), \
-                #     'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
-                #         [_sec for _sec in _cfg_sec if _sec not in sections],
-                #         pformat(_cfg_sec), _cfg, pformat(sections))
+                    parent = _node.parent
+                    specific_sec.append((_node.seq_id, _node.name))
+                    specific_sec_ids.append(_node.seq_id)
 
-                """all occurrences of each section
-                """
-                _cfg_sec_ids = [[i for i, x in enumerate(sections) if _sec and x == _sec] for _sec in _cfg_sec]
+                    specific_sec.append((parent.seq_id, parent.name))
+                    specific_sec_ids.append(parent.seq_id)
 
-                # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
-
-                """flatten
-                """
-                __cfg_sec_ids = []
-                __cfg_sec = []
-                for _sec, _sec_ids in zip(_cfg_sec, _cfg_sec_ids):
-                    for _sec_id in _sec_ids:
-                        __cfg_sec.append(_sec)
-                        __cfg_sec_ids.append(_sec_id)
-
-                """sort by line
-                """
-                _cfg_sec_disp = []
-                valid_cfg_sec = []
-                _sec_args = []
-                valid_parent_names = [root_sec_name, ]
-                _common_str = ''
-
-                for _sec_id, x in specific_sec:
-                    __cfg_sec_ids.append(_sec_id)
-                    __cfg_sec.append(x)
-
-                    # _start_id = section_ids[_sec_id] + 1
-                    # _end_id = section_ids[_sec_id + 1] if _sec_id < len(sections) - 1 else n_file_args
+                    # if _node.parent.template_id:
+                    #     shared_parents = template_nodes[_node.parent.template_id]
+                    # else:
+                    #     shared_parents = [_node.parent, ]
                     #
-                    # # discard empty lines from end of section
-                    # while not file_args[_end_id - 1]:
-                    #     _end_id -= 1
+                    # for parent in shared_parents:
+                    #     specific_sec.append((parent.seq_id, parent.name))
+                    #     specific_sec_ids.append(parent.seq_id)
 
-                    # _sec_args += file_args[_start_id:_end_id]
+                    # _sec_matches = []
+                    # _curr_sec_node = _node
+                    # while _curr_sec_node.parent is not None:
+                    #     _sec_matches.append((_curr_sec_node.seq_id, _curr_sec_node.name))
+                    #     _curr_sec_node = _curr_sec_node.parent
+                    # specific_sec += _sec_matches[::-1]
+                # specific_sec[_sec] = curr_specific_sec
 
-                n_sections = len(sections)
-                for _sec_id, x in sorted(zip(__cfg_sec_ids, __cfg_sec)):
+                _cfg_sec[_id] = ''
 
-                    curr_node = nodes[(x, section_ids[_sec_id])]  # type: Node
+            # valid_check = [_sec in sections for _sec in _cfg_sec]
+            # assert all(valid_check), \
+            #     'One or more sections: {} from:\n{}\nnot found in cfg file {} with sections:\n{}'.format(
+            #         [_sec for _sec in _cfg_sec if _sec not in sections],
+            #         pformat(_cfg_sec), _cfg, pformat(sections))
 
-                    if curr_node.parent.name not in valid_parent_names:
-                        print('skipping node {} whose parent {} in not among valid parents: {}'.format(
-                            curr_node.name, curr_node.parent.name, valid_parent_names))
-                        continue
+            """all occurrences of each section
+            """
+            _cfg_sec_ids = [[i for i, x in enumerate(sections) if _sec and x == _sec] for _sec in _cfg_sec]
 
-                    valid_parent_names.append(x)
-                    valid_cfg_sec.append(x)
+            # _cfg_sec_ids = [item for sublist in _cfg_sec_ids for item in sublist]
 
-                    _start_id = section_ids[_sec_id] + 1
-                    _template_id = template_ids[_sec_id]
-                    if _template_id:
-                        """template sections with the same ID all have same line IDs so look for the 
-                        first subsequent section with different ID if any"""
-                        _end_id = n_file_args
-                        for i in range(_sec_id + 1, n_sections):
-                            if template_ids[i] != _template_id:
-                                _end_id = section_ids[i]
-                                break
-                    else:
-                        _end_id = section_ids[_sec_id + 1] if _sec_id < n_sections - 1 else n_file_args
+            """flatten
+            """
+            __cfg_sec_ids = []
+            __cfg_sec = []
+            for _sec, _sec_ids in zip(_cfg_sec, _cfg_sec_ids):
+                for _sec_id in _sec_ids:
+                    __cfg_sec.append(_sec)
+                    __cfg_sec_ids.append(_sec_id)
 
-                    # discard empty lines from start of section
-                    while not file_args[_start_id - 1]:
-                        _start_id += 1
+            _cfg_sec_disp = []
+            valid_cfg_sec = []
+            _sec_args = []
+            valid_parent_names = [root_sec_name, ]
+            valid_parent_seq_ids = [None, ]
+            _common_str = ''
 
-                    # discard empty lines from end of section
-                    while not file_args[_end_id - 1]:
-                        _end_id -= 1
+            for _sec_id, x in specific_sec:
+                __cfg_sec_ids.append(_sec_id)
+                __cfg_sec.append(x)
 
-                    if _start_id >= _end_id:
-                        # print('skipping empty section {}'.format(x))
-                        continue
+            n_sections = len(sections)
+            """sort by line and process each cfg section
+            """
+            __cfg_sec_sorted = sorted(zip(__cfg_sec_ids, __cfg_sec))
 
-                    _curr_sec_args = file_args[_start_id:_end_id]
+            for _sec_id, x in __cfg_sec_sorted:
 
-                    _curr_sec_name = sections[_sec_id]
-                    _curr_sec_full_name = curr_node.full_name
-                    for i, _curr_sec_arg in enumerate(_curr_sec_args):
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                _curr_sec_seq_id = section_seq_ids[_sec_id]
+                _curr_sec_node = nodes[_curr_sec_seq_id]  # type: Node
 
-                        if '__name_ratio__' in _curr_sec_args[i]:
-                            ratio_str = str(float(_curr_sec_name) / 100.0)
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
+                _curr_sec_parent_name = _curr_sec_node.parent.name
+                _curr_sec_parent_seq_id = _curr_sec_node.parent.seq_id
+                _curr_sec_seq_id = _curr_sec_node.seq_id
+                _curr_sec_name = sections[_sec_id]
+                _curr_sec_full_name = _curr_sec_node.full_name
+                _curr_sec_parent_full_name = _curr_sec_node.parent.full_name
 
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
-                                                                      ','.join(_curr_sec_name.split('_')))
-                        if '__name_list_ratio__' in _curr_sec_args[i]:
-                            temp = _curr_sec_name.split('_')
-                            for k_id, k in enumerate(temp):
-                                if k.startswith('n'):
-                                    k = k.replace('n', '-')
-                                k = str(float(k) / 100.0)
-                                temp[k_id] = k
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
+                ancestors = _curr_sec_node.get_ancestors()
+                _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]] + [_curr_sec_name, ])
 
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
-                                                                      ':'.join(_curr_sec_name.split('_')))
+                assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
+                if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
+                    print('skipping section {}'.format(_curr_sec_ancestral_path))
+                    continue
 
-                    _sec_args += _curr_sec_args
+                valid_parent_seq_ids.append(_curr_sec_seq_id)
+                valid_parent_names.append(x)
+                valid_cfg_sec.append(x)
 
-                    start_line_num = _start_id + 1 - file_args_offset
-                    end_line_num = _end_id - file_args_offset
+                _start_id = section_line_ids[_sec_id] + 1
+                _template_id = section_template_ids[_sec_id]
+                # if _template_id:
+                #     """template sections with the same ID all have same line IDs so look for the
+                #     first subsequent section with different ID that is not an ancestor;
+                #     """
+                #     _end_id = n_file_args
+                #     _next_sec_id = None
+                #     # ancestors = _curr_sec_node.get_ancestors()
+                #     # ancestor_template_ids = [ancestor.template_id for ancestor in ancestors]
+                #     for i in range(_sec_id + 1, n_sections):
+                #         if section_template_ids[i] != _template_id and section_line_ids[i] > _start_id:
+                #             _next_node = nodes[section_seq_ids[i]]
+                #             _next_template_id = section_template_ids[i]
+                #             _end_id = section_line_ids[i]
+                #             _next_sec_id = i
+                #             break
+                # else:
+                #     _end_id = section_line_ids[_sec_id + 1] if _sec_id < n_sections - 1 else n_file_args
 
+                _end_id = section_end_ids[_sec_id]
+
+                # discard empty and comment lines from start of section
+                orig_start_id = _start_id
+                while _start_id < n_file_args:
+                    if _file_args[_start_id] and not _file_args[_start_id].startswith('#'):
+                        # if _file_args[_start_id - 1]:
+                        break
+                    _start_id += 1
+
+                # discard empty and comment lines from end of section
+                orig_end_id = _end_id
+                while _end_id >= 0:
+                    if _file_args[_end_id - 1] and not _file_args[_end_id - 1].startswith('#'):
+                        # if _file_args[_end_id - 1]:
+                        break
+                    _end_id -= 1
+
+                if _start_id >= _end_id:
                     if x not in common_sections:
+                        print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
+                        assert orig_start_id == orig_end_id, "something weird going on"
+                    continue
 
-                        _sec_disp_name = curr_node.full_name if _sec_id in specific_sec_ids else x
+                _curr_sec_args = _file_args[_start_id:_end_id]
 
-                        _str = '{}: {}'.format(_sec_disp_name, start_line_num)
-                        if end_line_num > start_line_num:
-                            _str = '{} -> {}'.format(_str, end_line_num)
-                        _cfg_sec_disp.append(_str)
-                    else:
-                        _str = '{}'.format(start_line_num)
-                        if end_line_num > start_line_num:
-                            _str = '{} -> {}'.format(_str, end_line_num)
-                        _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
+                for i, _curr_sec_arg in enumerate(_curr_sec_args):
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_name__', _curr_sec_parent_name)
 
-                    # print(_str)
-                    # pass
+                    if '__name_ratio__' in _curr_sec_args[i]:
+                        ratio_str = str(float(_curr_sec_name) / 100.0)
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
 
-                invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
-                if invalid_cfg_sec:
-                    raise AssertionError('Invalid cfg sections provided for {}:\n {}'.format(_cfg, invalid_cfg_sec))
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
+                                                                  ','.join(_curr_sec_name.split('_')))
+                    if '__name_list_ratio__' in _curr_sec_args[i]:
+                        temp = _curr_sec_name.split('_')
+                        for k_id, k in enumerate(temp):
+                            if k.startswith('n'):
+                                k = k.replace('n', '-')
+                            k = str(float(k) / 100.0)
+                            temp[k_id] = k
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
 
-                if _common_str:
-                    _common_str = 'common: {}'.format(_common_str)
-                    _cfg_sec_disp.append(_common_str)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
+                                                                  ':'.join(_curr_sec_name.split('_')))
 
-                print('\t{}'.format(
-                    '\n\t'.join(_cfg_sec_disp)
-                    # pformat(_cfg_sec_disp)
-                ))
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_full_name__',
+                                                                  _curr_sec_parent_full_name)
 
-                file_args = _sec_args
+                _sec_args += _curr_sec_args
+
+                start_line_num = _start_id + 1 - file_args_offset
+                end_line_num = _end_id - file_args_offset
+
+                if x not in common_sections:
+
+                    # if _sec_id in specific_sec_ids and not _curr_sec_node.parent.is_root:
+                    #     _sec_disp_name = _curr_sec_full_name
+                    # # elif not _curr_sec_node.parent.is_root:
+                    # #     _sec_disp_name = '{}:{}'.format(_curr_sec_parent_name, _curr_sec_name)
+                    # else:
+                    #     _sec_disp_name = _curr_sec_ancestral_path
+
+                    _sec_disp_name = _curr_sec_ancestral_path
+
+                    _str = '{}: {}'.format(_sec_disp_name, start_line_num)
+                    if end_line_num > start_line_num:
+                        _str = '{} -> {}'.format(_str, end_line_num)
+                    _cfg_sec_disp.append(_str)
+                else:
+                    _str = '{}'.format(start_line_num)
+                    if end_line_num > start_line_num:
+                        _str = '{} -> {}'.format(_str, end_line_num)
+                    _common_str = '{}, {}'.format(_common_str, _str) if _common_str else _str
+
+                # print(_str)
+                # pass
+
+            invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
+            if invalid_cfg_sec:
+                raise AssertionError('Invalid cfg sections provided for {}:\n {}'.format(_cfg, invalid_cfg_sec))
+
+            if _common_str:
+                _common_str = 'common: {}'.format(_common_str)
+                _cfg_sec_disp.append(_common_str)
+
+            print('\t{}'.format(
+                '\n\t'.join(_cfg_sec_disp)
+                # pformat(_cfg_sec_disp)
+            ))
+
+            file_args = _sec_args
 
             file_args = [arg.strip() for arg in file_args if arg.strip()]
             # lines starting with # in the cfg file are comments or section headings and thus ignored
