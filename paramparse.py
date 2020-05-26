@@ -1008,7 +1008,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 __cfg_sec_ids.append(_sec_id)
                 __cfg_sec.append(x)
 
-            n_sections = len(sections)
+            # n_sections = len(sections)
+
             """sort by line and process each cfg section
             """
             __cfg_sec_sorted = sorted(zip(__cfg_sec_ids, __cfg_sec))
@@ -1026,7 +1027,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _curr_sec_parent_full_name = _curr_sec_node.parent.full_name
 
                 ancestors = _curr_sec_node.get_ancestors()
-                _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]] + [_curr_sec_name, ])
+                _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]] +
+                                                    [_curr_sec_name, ])
 
                 assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
@@ -1040,6 +1042,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 _start_id = section_line_ids[_sec_id] + 1
                 _template_id = section_template_ids[_sec_id]
+
                 # if _template_id:
                 #     """template sections with the same ID all have same line IDs so look for the
                 #     first subsequent section with different ID that is not an ancestor;
@@ -1078,8 +1081,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 if _start_id >= _end_id:
                     if x not in common_sections:
-                        print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
-                        assert orig_start_id == orig_end_id, "something weird going on"
+                        # print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
+                        assert orig_start_id == orig_end_id, "invalid empty section {} ({}, {})".format(
+                            x, orig_start_id, orig_end_id)
                     continue
 
                 _curr_sec_args = _file_args[_start_id:_end_id]
