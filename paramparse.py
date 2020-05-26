@@ -1192,34 +1192,33 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         pf = ''
         for _id, _arg in enumerate(args_in):
             _arg = _arg[2:]
+            suspend_pf = 0
             if _arg.startswith('@'):
                 _name = _arg[1:].strip()
-                if _name.startswith('@@'):
-                    if '.' in pf:
-                        _idx = pf.rfind('.')
-                        pf = pf[:_idx]
+
+                if '=' in _name:
+                    if _name.startswith('@@'):
+                        pf_id = '@@'
+                    elif _name.startswith('@'):
+                        pf_id = '@'
                     else:
-                        pf = ''
-                    _name = _name[2:].strip()
-                    if pf and _name:
-                        pf = '{}.{}'.format(pf, _name)
-                    elif pf:
-                        pass
-                    elif _name:
-                        pf = _name
-                elif _name.startswith('@'):
-                    _name = _name[1:].strip()
-                    if pf and _name:
-                        pf = '{}.{}'.format(pf, _name)
+                        pf_id = ''
+                    _pf = _get_pf(pf_id, pf)
+                    _name = _name.lstrip('@')
+                    if _pf:
+                        _arg = '{}.{}'.format(_pf, _name)
+                    else:
+                        _arg = _name
+                    suspend_pf = 1
                 else:
-                    pf = _name
-                continue
+                    pf = _get_pf(_name, pf)
+                    continue
             if '+=' in _arg:
                 try:
                     _name, _val = _arg.split('+=')
                 except ValueError as e:
                     raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
-                if pf:
+                if pf and not suspend_pf:
                     _name = '{}.{}'.format(pf, _name)
                 try:
                     arg_type = member_to_type[_name]
@@ -1275,6 +1274,32 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     # print('test_seq_ids: ', self.test_seq_ids)
 
     return args_in
+
+
+def _get_pf(_name, pf):
+    if _name.startswith('@@'):
+        """go up one level"""
+        if '.' in pf:
+            _idx = pf.rfind('.')
+            pf = pf[:_idx]
+        else:
+            pf = ''
+        _name = _name[2:].strip()
+        if pf and _name:
+            pf = '{}.{}'.format(pf, _name)
+        elif pf:
+            pass
+        elif _name:
+            pf = _name
+    elif _name.startswith('@'):
+        """go down one level"""
+        _name = _name[1:].strip()
+        if pf and _name:
+            pf = '{}.{}'.format(pf, _name)
+    else:
+        pf = _name
+
+    return pf
 
 
 def from_parser(parser, class_name='Params', allow_none_default=1,
