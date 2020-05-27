@@ -1033,7 +1033,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
                 if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
-                    print('skipping section {}'.format(_curr_sec_ancestral_path))
+                    # print('skipping section {}'.format(_curr_sec_ancestral_path))
                     continue
 
                 valid_parent_seq_ids.append(_curr_sec_seq_id)
