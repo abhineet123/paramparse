@@ -406,8 +406,8 @@ def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
 
 def _recursive_load(obj, loaded_obj, prefix, missing_params):
     load_members = [attr for attr in dir(loaded_obj) if
-                    not callable(getattr(loaded_obj, attr)) and not attr.startswith("__")]
-    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
+                    not callable(getattr(loaded_obj, attr)) and not attr.startswith("_")]
+    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("_")]
     for member in obj_members:
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
         if member not in load_members:
@@ -422,7 +422,7 @@ def _recursive_load(obj, loaded_obj, prefix, missing_params):
 
 
 def _recursive_write(obj, prefix, save_fid):
-    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("__")]
+    obj_members = [attr for attr in dir(obj) if not callable(getattr(obj, attr)) and not attr.startswith("_")]
     for member in obj_members:
         if member == 'help':
             continue
