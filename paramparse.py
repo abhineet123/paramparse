@@ -93,11 +93,11 @@ class MultiCFG(MultiString):
             _cfg_list = cfg_token.split(':')
             cfg_id = _cfg_list[0]
 
-            assert cfg_id in valid_ids, f"Invalid cfg_id: {cfg_id} in cfg token: {cfg_token}"
+            assert cfg_id in valid_ids, "Invalid cfg_id: {} in cfg token: {}".format(cfg_id, cfg_token)
 
             cfg_str = ':'.join(_cfg_list[1:])
             try:
-                _cfgs_out[cfg_id] = f'{_cfgs_out[cfg_id]},{cfg_str}'
+                _cfgs_out[cfg_id] = '{},{}'.format(_cfgs_out[cfg_id], cfg_str)
             except KeyError:
                 _cfgs_out[cfg_id] = cfg_str
         return _cfgs_out
