@@ -784,7 +784,7 @@ def read_cfg(_cfg):
     nodes_by_fullname = defaultdict(list)
     _find_children(nodes, nodes_by_fullname, _sections, 0, 0, curr_root, n_sections)
 
-    return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+    return nodes, dict(nodes_by_fullname), _sections, file_args, file_args_offset, root_sec_name
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
@@ -936,7 +936,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             """specific sections from full names"""
             invalid_sec = [(_id, _sec) for _id, _sec in enumerate(_cfg_sec) if _sec not in sections]
             specific_sec = []
-            specific_sec_ids = []
+            specific_sec_ids = {}
 
             # _node_matches = {( _id, _sec) : nodes[k] for _id, _sec in invalid_sec for k in nodes
             #                  if nodes[k].full_name == _sec}
@@ -952,10 +952,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                     parent = _node.parent
                     specific_sec.append((_node.seq_id, _node.name))
-                    specific_sec_ids.append(_node.seq_id)
+                    specific_sec_ids[_node.seq_id] = 0
 
                     specific_sec.append((parent.seq_id, parent.name))
-                    specific_sec_ids.append(parent.seq_id)
+                    specific_sec_ids[parent.seq_id] = 1
 
                     # if _node.parent.template_id:
                     #     shared_parents = template_nodes[_node.parent.template_id]
@@ -1033,7 +1033,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
                 if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
-                    # print('skipping section {}'.format(_curr_sec_ancestral_path))
+                    # if _sec_id in specific_sec_ids and specific_sec_ids[_sec_id] == 0:
+                    #     raise AssertionError('Specific section {} not found'.format(_curr_sec_ancestral_path))
+                    print('skipping section {}'.format(_curr_sec_ancestral_path))
                     continue
 
                 valid_parent_seq_ids.append(_curr_sec_seq_id)
@@ -1081,7 +1083,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 if _start_id >= _end_id:
                     if x not in common_sections:
-                        # print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
+                        print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
                         assert orig_start_id == orig_end_id, "invalid empty section {} ({}, {})".format(
                             x, orig_start_id, orig_end_id)
                     continue
@@ -1143,7 +1145,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 # print(_str)
                 # pass
 
-            invalid_cfg_sec = [k for k in _cfg_sec if k and k not in valid_cfg_sec]
+            invalid_cfg_sec = [k for k in __cfg_sec if k and k not in valid_cfg_sec]
             if invalid_cfg_sec:
                 raise AssertionError('Invalid cfg sections provided for {}:\n {}'.format(_cfg, invalid_cfg_sec))
 
