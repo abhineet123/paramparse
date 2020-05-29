@@ -1480,7 +1480,7 @@ def from_dict(param_dict, class_name='Params',
         except BaseException as e:
             print('Copying to clipboard failed: {}'.format(e))
         else:
-            print('Class definition copied to clipboard')
+            print('Class definition for class {} copied to clipboard'.format(class_name))
 
     else:
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
@@ -1491,12 +1491,24 @@ def from_dict(param_dict, class_name='Params',
             fid.write(out_text)
 
 
-def from_function(fn, class_name='Params',
+def from_function(fn, class_name='', start=0, only_kw=True,
                   add_cfg=True, add_doc=True, add_help=True,
                   to_clipboard=False):
     args, varargs, varkw, defaults = inspect.getargspec(fn)
+
+    if not class_name:
+        class_name = fn.__name__
+
+    args = args[start:]
+
     n_defaults = len(defaults)
+    n_non_defaults = len(args) - n_defaults
+
     args_dict = dict(zip(args[-n_defaults:], defaults))
+    if not only_kw and n_non_defaults:
+        args_dict_non_defaults = dict(zip(args[:n_defaults], [None, ] * n_non_defaults))
+        args_dict.update(args_dict_non_defaults)
+
     from_dict(args_dict, class_name, add_cfg=add_cfg,
               add_doc=add_doc, add_help=add_help,
               to_clipboard=to_clipboard)
