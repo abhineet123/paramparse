@@ -1035,7 +1035,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
                     # if _sec_id in specific_sec_ids and specific_sec_ids[_sec_id] == 0:
                     #     raise AssertionError('Specific section {} not found'.format(_curr_sec_ancestral_path))
-                    print('skipping section {}'.format(_curr_sec_ancestral_path))
+                    # print('skipping section {}'.format(_curr_sec_ancestral_path))
                     continue
 
                 valid_parent_seq_ids.append(_curr_sec_seq_id)
@@ -1083,7 +1083,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 if _start_id >= _end_id:
                     if x not in common_sections:
-                        print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
+                        # print('skipping empty section {} ({}, {})'.format(x, orig_start_id, orig_end_id))
                         assert orig_start_id == orig_end_id, "invalid empty section {} ({}, {})".format(
                             x, orig_start_id, orig_end_id)
                     continue
