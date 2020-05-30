@@ -181,7 +181,7 @@ def match_opt(params, opt_name, print_name=''):
     opt_val = str(getattr(params, opt_name))
     opt_vals = params.help[opt_name]  # type: dict
 
-    matching_val = [k for k in opt_vals.keys() if opt_val in opt_vals[k]]
+    matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
     assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
     assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
 
