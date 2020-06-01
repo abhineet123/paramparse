@@ -534,6 +534,9 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
 
             member_to_type[member_param_name] = member_type
 
+            # if member_type in (MultiCFG, MultiPath):
+            #     print()
+
             if hasattr(obj, 'help') and member in obj.help:
                 _help = obj.help[member]
                 if not isinstance(_help, str):
@@ -1029,6 +1032,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 ancestors = _curr_sec_node.get_ancestors()
                 _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]] +
                                                     [_curr_sec_name, ])
+                _curr_sec_root_name = ancestors[-1].name if ancestors else _curr_sec_name
 
                 assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
@@ -1093,6 +1097,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 for i, _curr_sec_arg in enumerate(_curr_sec_args):
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_name__', _curr_sec_parent_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__root_name__', _curr_sec_root_name)
 
                     if '__name_ratio__' in _curr_sec_args[i]:
                         ratio_str = str(float(_curr_sec_name) / 100.0)
