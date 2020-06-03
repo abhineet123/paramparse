@@ -33,6 +33,7 @@ class MultiString(str):
         tokens = _str.split(_sep)
         tokens = [strip_quotes(k) for k in tokens]
         token_str = _sep.join(tokens)
+        token_str = token_str.replace(_sep + '!', '')
         return token_str
 
 
@@ -651,6 +652,13 @@ def read_cfg(_cfg):
     n_file_args = len(file_args)
     n_sections = len(_sections)
 
+    """parent specific sections"""
+    # _parent_specific_section_ids = [k[1] for k in _sections if k[0].endswith(' __')]
+    # _sections = [(k[0].rstrip(' __'), k[1], k[2], k[3]) if k[1] in _parent_specific_section_ids else k
+    #              for k in _sections]
+
+    _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
+
     """common sections"""
     _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
 
@@ -854,7 +862,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             if ':' not in _cfg:
                 _cfg = '{}:__common__'.format(_cfg)
 
+            """alternate specification for parent specific sections for ease of selecting child section"""
             _cfg = _cfg.replace('-', '')
+
             _cfg = _cfg.split(':')
             _cfg_sec = [k for k in list(_cfg[1:]) if k]
             _cfg = _cfg[0]
