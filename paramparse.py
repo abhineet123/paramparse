@@ -281,6 +281,13 @@ def strip_quotes(val):
     return val.strip("\'").strip('\"')
 
 
+def str_to_tuple_multi(val):
+    vals = val.split('+')
+    out_list = []
+    for _val in vals:
+        out_list += list(str_to_tuple(_val))
+    return tuple(out_list)
+
 def str_to_tuple(val):
     if val.startswith('range('):
         """standard (exclusive) range"""
@@ -728,27 +735,29 @@ def read_cfg(_cfg):
                 # assert ',' not in _sec_name, \
                 #     "Combining template and range sections is not supported currently"
                 """in case there are multiple ranges or lists"""
-                in_range_sec_names = _sec_name.split('+')
-                for in_range_sec_name in in_range_sec_names:
-                    range_tokens = in_range_sec_name.split('_')
-                    range_tuples = tuple(map(str_to_tuple, range_tokens))
+                # in_range_sec_names = _sec_name.split('+')
+                # for in_range_sec_name in in_range_sec_names:
+                in_range_sec_name = _sec_name
+                range_tokens = in_range_sec_name.split('_')
+                """in case there are multiple ranges or lists"""
+                range_tuples = tuple(map(str_to_tuple_multi, range_tokens))
 
-                    def _get_sec_names(_sec_names, _tuples, _id, _nums):
-                        for _num in _tuples[_id]:
-                            __nums = _nums[:]
-                            if _num < 0:
-                                __nums.append('n' + str(abs(_num)))
-                            else:
-                                __nums.append(str(_num))
-                            if _id < len(_tuples) - 1:
-                                _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
-                            else:
-                                __sec_name = '_'.join(__nums)
-                                _sec_names.append(__sec_name)
+                def _get_sec_names(_sec_names, _tuples, _id, _nums):
+                    for _num in _tuples[_id]:
+                        __nums = _nums[:]
+                        if _num < 0:
+                            __nums.append('n' + str(abs(_num)))
+                        else:
+                            __nums.append(str(_num))
+                        if _id < len(_tuples) - 1:
+                            _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
+                        else:
+                            __sec_name = '_'.join(__nums)
+                            _sec_names.append(__sec_name)
 
-                    _out_range_sec_names = []
-                    _get_sec_names(_out_range_sec_names, range_tuples, 0, [])
-                    _templ_sec_names += _out_range_sec_names
+                _out_range_sec_names = []
+                _get_sec_names(_out_range_sec_names, range_tuples, 0, [])
+                _templ_sec_names += _out_range_sec_names
             elif ',' in _sec_name:
                 _templ_sec_names = _sec_name.split(',')
 
