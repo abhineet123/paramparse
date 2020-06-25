@@ -288,6 +288,7 @@ def str_to_tuple_multi(val):
         out_list += list(str_to_tuple(_val))
     return tuple(out_list)
 
+
 def str_to_tuple(val):
     if val.startswith('range('):
         """standard (exclusive) range"""
@@ -405,9 +406,9 @@ def write(obj, dir_name, prefix='', out_name='params.cfg'):
 def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
     load_path = os.path.join(dir_name, out_name)
     lines = open(load_path, "r").readlines()
-    args_in = ['--{}'.format(k.strip()) for k in lines]
     if prefix:
-        args_in = [k.replace(prefix + '.', '') for k in args_in]
+        lines = [k.replace(prefix + '.', '') for k in lines if k.startswith(prefix + '.')]
+    args_in = ['--{}'.format(k.strip()) for k in lines]
     process(obj, args_in=args_in, prog=prefix,
             usage=None, allow_unknown=allow_unknown)
 
@@ -423,7 +424,7 @@ def _recursive_load(obj, loaded_obj, prefix, missing_params):
             continue
         default_val = getattr(obj, member)
         load_val = getattr(loaded_obj, member)
-        if isinstance(default_val, (int, bool, float, str, tuple, list, dict)):
+        if isinstance(default_val, (int, bool, float, str, tuple, list, dict, MultiPath, MultiCFG)):
             setattr(obj, member, load_val)
         else:
             _recursive_load(default_val, load_val, member_name, missing_params)
@@ -436,7 +437,7 @@ def _recursive_write(obj, prefix, save_fid):
             continue
         member_val = getattr(obj, member)
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
-        if isinstance(member_val, (int, bool, float, str)):
+        if isinstance(member_val, (int, bool, float, str, MultiPath, MultiCFG)):
             save_fid.write('{:s}={:s}\n'.format(member_name, scalar_to_string(member_val)))
         elif isinstance(member_val, tuple):
             save_fid.write('{:s}={:s}\n'.format(member_name, tuple_to_string(member_val)))
@@ -515,6 +516,10 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
     """
     members = tuple([attr for attr in dir(obj) if not callable(getattr(obj, attr))
                      and not attr.startswith("_")])
+
+    assert members, "Invalid composite object with no component members found: {} (type: {})".format(
+        obj, type(obj))
+
     if obj_name:
         if root_name:
             root_name = '{:s}.{:s}'.format(root_name, obj_name)
@@ -805,6 +810,25 @@ def read_cfg(_cfg):
     _find_children(nodes, nodes_by_fullname, _sections, 0, 0, curr_root, n_sections)
 
     return nodes, dict(nodes_by_fullname), _sections, file_args, file_args_offset, root_sec_name
+
+
+def process_dict(params, *args, **kwargs):
+    """
+
+    :param dict params:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+
+    class TempObject:
+        def __init__(self, entries):
+            self.help = {}
+            self.__dict__.update(entries)
+
+    obj = TempObject(params)
+    process(obj, *args, **kwargs)
+    params.update(obj.__dict__)
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
