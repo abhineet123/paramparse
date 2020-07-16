@@ -1465,9 +1465,12 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
         out_fname = '{}.py'.format(class_name_snake_case)
         out_path = os.path.abspath(out_fname)
-        print('Writing output to {}'.format(out_path))
-        with open(out_path, 'w') as fid:
-            fid.write(out_text)
+        if os.path.exists(out_path):
+            print('output path already exists so not writing to it: {}'.format(out_path))
+        else:
+            print('Writing output to {}'.format(out_path))
+            with open(out_path, 'w') as fid:
+                fid.write(out_text)
 
 
 def from_dict(param_dict, class_name='Params',
@@ -1534,9 +1537,13 @@ def from_dict(param_dict, class_name='Params',
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
         out_fname = '{}.py'.format(class_name_snake_case)
         out_path = os.path.abspath(out_fname)
-        print('Writing output to {}'.format(out_path))
-        with open(out_path, 'w') as fid:
-            fid.write(out_text)
+
+        if os.path.exists(out_path):
+            print('output path already exists so not writing to it: {}'.format(out_path))
+        else:
+            print('Writing output to {}'.format(out_path))
+            with open(out_path, 'w') as fid:
+                fid.write(out_text)
 
 
 def from_function(fn, class_name='', start=0, only_kw=True,
