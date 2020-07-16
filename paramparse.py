@@ -651,6 +651,9 @@ def _process_args_from_parser(obj, args, member_to_type):
 
 
 def read_cfg(_cfg):
+    if not _cfg:
+        return
+
     print('Reading parameters from {:s}'.format(_cfg))
     file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
     file_args_offset = 0
@@ -949,6 +952,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         args_in = []
         prev_cfg_data = []
         for _cfg, _cfg_sec, _cfg_repeat in cfg_file_list:
+            if not _cfg:
+                continue
+
             if _cfg_repeat:
                 assert prev_cfg_data, "repeat cfg found without previous cfg data: {}".format(_cfg)
                 print('Processing repeat parameters from {:s}'.format(_cfg))
