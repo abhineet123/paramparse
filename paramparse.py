@@ -1051,6 +1051,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
             _cfg_sec_disp = []
             valid_cfg_sec = []
+            skipped_cfg_sec = []
+            skipped_parent_seq_ids = []
             _sec_args = []
             valid_parent_names = [root_sec_name, ]
             valid_parent_seq_ids = [None, ]
@@ -1066,6 +1068,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             """
             __cfg_sec_sorted = sorted(zip(__cfg_sec_ids, __cfg_sec))
 
+            __cfg_seq_ids = [section_seq_ids[k[0]] for k in __cfg_sec_sorted]
+
             for _sec_id, x in __cfg_sec_sorted:
 
                 _curr_sec_seq_id = section_seq_ids[_sec_id]
@@ -1073,23 +1077,46 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 _curr_sec_parent_name = _curr_sec_node.parent.name
                 _curr_sec_parent_seq_id = _curr_sec_node.parent.seq_id
+
                 _curr_sec_seq_id = _curr_sec_node.seq_id
                 _curr_sec_name = sections[_sec_id]
-                _curr_sec_full_name = _curr_sec_node.full_name
-                _curr_sec_parent_full_name = _curr_sec_node.parent.full_name
-
-                ancestors = _curr_sec_node.get_ancestors()
-                _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]] +
-                                                    [_curr_sec_name, ])
-                _curr_sec_root_name = ancestors[-1].name if ancestors else _curr_sec_name
-
-                assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
                 if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
                     # if _sec_id in specific_sec_ids and specific_sec_ids[_sec_id] == 0:
                     #     raise AssertionError('Specific section {} not found'.format(_curr_sec_ancestral_path))
                     # print('skipping section {}'.format(_curr_sec_ancestral_path))
+                    if _curr_sec_parent_seq_id in skipped_parent_seq_ids:
+                        skipped_cfg_sec.append(x)
+                        skipped_parent_seq_ids.append(_curr_sec_seq_id)
                     continue
+
+                if _curr_sec_name == '__exc__':
+                    """exclusive sibling section"""
+                    siblings = [(sec_node.seq_id, sec_node.name) for sec_node in _curr_sec_node.parent.children
+                                if sec_node.seq_id != _curr_sec_seq_id]
+                    included_siblings = [k for k in siblings if k[0] != _curr_sec_seq_id and k[0] in __cfg_seq_ids]
+                    if included_siblings:
+                        assert len(included_siblings) == 1, \
+                            "multiple included siblings for " \
+                            "exclusive section with parent {},{} :: {}".format(
+                                _curr_sec_parent_seq_id, _curr_sec_parent_name, included_siblings)
+                        # print('skipping exclusive section {} with parent {},{} due to included sibling: {}'.format(
+                        #     _curr_sec_seq_id, _curr_sec_parent_seq_id, _curr_sec_parent_name, included_siblings[0]
+                        # ))
+                        skipped_cfg_sec.append(x)
+                        skipped_parent_seq_ids.append(_curr_sec_seq_id)
+                        continue
+
+                _curr_sec_full_name = _curr_sec_node.full_name
+                _curr_sec_parent_full_name = _curr_sec_node.parent.full_name
+
+                ancestors = _curr_sec_node.get_ancestors()
+                _curr_sec_ancestral_path = ':'.join([ancestor.name for ancestor in ancestors[::-1]
+                                                     if ancestor.name not in common_sections] +
+                                                    [_curr_sec_name, ])
+                _curr_sec_root_name = ancestors[-1].name if ancestors else _curr_sec_name
+
+                assert x == _curr_sec_name, "mismatch between x: {} and _curr_sec_name: {}".format(x, _curr_sec_name)
 
                 valid_parent_seq_ids.append(_curr_sec_seq_id)
                 valid_parent_names.append(x)
@@ -1145,30 +1172,50 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 for i, _curr_sec_arg in enumerate(_curr_sec_args):
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_name__', _curr_sec_parent_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__root_name__', _curr_sec_root_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent__', _curr_sec_parent_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__root__', _curr_sec_root_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__full__', _curr_sec_full_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_full__',
+                                                                  _curr_sec_parent_full_name)
 
-                    if '__name_ratio__' in _curr_sec_args[i]:
-                        ratio_str = str(float(_curr_sec_name) / 100.0)
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_ratio__', ratio_str)
+                    if '__ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__ratio__',
+                                                                      str(float(_curr_sec_name) / 100.0))
+                    if '__parent_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_ratio__',
+                                                                      str(float(_curr_sec_parent_name) / 100.0))
+                    if '__list__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__list__',
+                                                                      ','.join(_curr_sec_name.split('_')))
 
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list__',
-                                                                  ','.join(_curr_sec_name.split('_')))
-                    if '__name_list_ratio__' in _curr_sec_args[i]:
-                        temp = _curr_sec_name.split('_')
+                    if '__parent_list__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_list__',
+                                                                      ','.join(_curr_sec_parent_name.split('_')))
+
+                    def name_to_list_ratio(_name):
+                        temp = _name.split('_')
                         for k_id, k in enumerate(temp):
                             if k.startswith('n'):
                                 k = k.replace('n', '-')
                             k = str(float(k) / 100.0)
                             temp[k_id] = k
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__name_list_ratio__', ','.join(temp))
+                        return ','.join(temp)
 
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name_range__',
-                                                                  ':'.join(_curr_sec_name.split('_')))
+                    if '__list_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__list_ratio__',
+                                                                      name_to_list_ratio(_curr_sec_name))
 
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__full_name__', _curr_sec_full_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_full_name__',
-                                                                  _curr_sec_parent_full_name)
+                    if '__parent_list_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_list_ratio__',
+                                                                      name_to_list_ratio(_curr_sec_parent_name))
+
+                    if '__range__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__range__',
+                                                                      ':'.join(_curr_sec_name.split('_')))
+
+                    if '__parent_range__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_range__',
+                                                                      ':'.join(_curr_sec_parent_name.split('_')))
 
                 _sec_args += _curr_sec_args
 
@@ -1199,7 +1246,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 # print(_str)
                 # pass
 
-            invalid_cfg_sec = [k for k in __cfg_sec if k and k not in valid_cfg_sec]
+            invalid_cfg_sec = [k for k in __cfg_sec if k and k not in valid_cfg_sec + skipped_cfg_sec]
             if invalid_cfg_sec:
                 raise AssertionError('Invalid cfg sections provided for {}:\n {}'.format(_cfg, invalid_cfg_sec))
 
