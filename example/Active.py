@@ -1,19 +1,19 @@
-from SVM import SVMParams
-from XGB import XGBParams
-from MLP import MLPParams
+from SVM import SVM
+from XGB import XGB
+from MLP import MLP
 
 class ActiveParams:
     """
     :type model_type: str
-    :type svm: SVMParams
-    :type xgb: XGBParams
+    :type svm: SVM.Params
+    :type xgb: XGB.Params
     :type mlp: MLPParams
     """
     def __init__(self):
         self.model_type = 'svm'
-        self.svm = SVMParams()
-        self.xgb = XGBParams()
-        self.mlp = MLPParams()
+        self.svm = SVM.Params()
+        self.xgb = XGB.Params()
+        self.mlp = MLP.Params()
 
         self.help = {
             'model_type': 'learning method used for decision making in the active state: '

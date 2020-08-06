@@ -1,5 +1,5 @@
-from SVM import SVMParams
-from XGB import XGBParams
+from SVM import SVM.Params
+from XGB import XGB.Params
 from MLP import MLPParams
 
 
@@ -26,8 +26,8 @@ class LostParams:
 
         self.copy_while_learning = 1
 
-        self.svm = SVMParams()
-        self.xgb = XGBParams()
+        self.svm = SVM.Params()
+        self.xgb = XGB.Params()
         self.mlp = MLPParams()
 
         self.help = {
