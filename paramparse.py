@@ -513,11 +513,16 @@ def type_from_docs(obj, member):
 
 
 def _get_valid_members(obj):
-    return tuple([attr for attr in dir(obj) if
+
+    obj_t = type(obj)
+    prop_attr = [attr for attr in dir(obj_t) if isinstance(getattr(obj_t, attr), property)]
+    valid_members = tuple([attr for attr in dir(obj) if
+                  attr not in prop_attr and
                   not callable(getattr(obj, attr))
                   and not attr.startswith("_")
-                  and not isinstance(getattr(type(obj), attr), property)
                   ])
+
+    return valid_members
 
 
 def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''):
