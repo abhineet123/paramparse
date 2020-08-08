@@ -275,11 +275,15 @@ def dict_to_string(vals):
         val = vals[key]
         key_str = scalar_to_string(key)
         if isinstance(val, (int, bool, float, str)):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, scalar_to_string(val))
+            val_str = scalar_to_string(val)
         elif isinstance(val, (tuple, list)):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, tuple_to_string(val))
+            val_str = tuple_to_string(val)
         elif isinstance(val, dict):
-            _str = '{:s}{:s}:{:s},'.format(_str, key_str, dict_to_string(val))
+            val_str = dict_to_string(val)
+        else:
+            raise TypeError('invalid scalar type for {}: {}'.format(val, type(val).__name__))
+
+        _str = '{:s}{:s}:{:s},'.format(_str, key_str, val_str)
     _str += '}}'
     return _str
 
@@ -476,7 +480,7 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
     return _match
 
 
-def help_from_docs(obj, member):
+def help_from_docs(obj, member, eval=0):
     _help = ''
     doc = inspect.getdoc(obj)
     if doc is None:
@@ -500,7 +504,6 @@ def help_from_docs(obj, member):
     _help = _match_template(start_templ, member_templ, filtered_str, (start_templ2, ))
     if _help:
         return _help
-
 
     _help = _match_template(start_templ2, member_templ2, filtered_str, (start_templ, ))
     return _help
