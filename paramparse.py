@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import json
+import copy
 import inspect
 import argparse
 from ast import literal_eval
@@ -144,7 +145,7 @@ class Node:
         self.seq_id = seq_id
         self.curr_level = curr_level
         self.template_id = template_id
-        self.is_included = False
+        # self.is_included = False
         self.children = []
 
         self.added = 0
@@ -420,7 +421,6 @@ def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
 
 
 def _recursive_load(obj, loaded_obj, prefix, missing_params):
-
     load_members = _get_valid_members(loaded_obj)
     obj_members = _get_valid_members(obj)
 
@@ -513,14 +513,13 @@ def type_from_docs(obj, member):
 
 
 def _get_valid_members(obj):
-
     obj_t = type(obj)
     prop_attr = [attr for attr in dir(obj_t) if isinstance(getattr(obj_t, attr), property)]
     valid_members = tuple([attr for attr in dir(obj) if
-                  attr not in prop_attr and
-                  not callable(getattr(obj, attr))
-                  and not attr.startswith("_")
-                  ])
+                           attr not in prop_attr and
+                           not callable(getattr(obj, attr))
+                           and not attr.startswith("_")
+                           ])
 
     return valid_members
 
@@ -1064,11 +1063,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             """
             __cfg_sec_ids = []
             __cfg_sec = []
+            is_included = defaultdict(bool)
             for _sec, _sec_ids in zip(_cfg_sec, _cfg_sec_ids):
                 for _sec_id in _sec_ids:
                     __cfg_sec.append(_sec)
                     __cfg_sec_ids.append(_sec_id)
-                    nodes[section_seq_ids[_sec_id]].is_included = True
+                    is_included[section_seq_ids[_sec_id]] = True
 
             _cfg_sec_disp = []
             valid_cfg_sec = []
@@ -1081,7 +1081,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
             for _sec_id, x in specific_sec:
                 __cfg_sec_ids.append(_sec_id)
-                nodes[section_seq_ids[_sec_id]].is_included = True
+                is_included[section_seq_ids[_sec_id]] = True
                 __cfg_sec.append(x)
 
             # n_sections = len(sections)
@@ -1115,15 +1115,15 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if _curr_sec_name == '__exc__':
                     """exclusive sibling section"""
                     included_siblings = [(_node.seq_id, _node.name) for _node in _curr_sec_node.parent.children
-                                         if _node.is_included and _node.seq_id != _curr_sec_seq_id]
+                                         if is_included[_node.seq_id] and _node.seq_id != _curr_sec_seq_id]
                     if included_siblings:
                         assert len(included_siblings) == 1, \
                             "multiple included siblings for " \
                             "exclusive section with parent {},{} :: {}".format(
                                 _curr_sec_parent_seq_id, _curr_sec_parent_name, included_siblings)
-                        # print('skipping exclusive section {} with parent {},{} due to included sibling: {}'.format(
-                        #     _curr_sec_seq_id, _curr_sec_parent_seq_id, _curr_sec_parent_name, included_siblings[0]
-                        # ))
+                        print('skipping exclusive section {} with parent {},{} due to included sibling: {}'.format(
+                            _curr_sec_seq_id, _curr_sec_parent_seq_id, _curr_sec_parent_name, included_siblings[0]
+                        ))
                         skipped_cfg_sec.append(x)
                         skipped_parent_seq_ids.append(_curr_sec_seq_id)
                         continue
