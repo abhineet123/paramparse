@@ -467,9 +467,18 @@ def help_from_docs(obj, member):
 
     templ = ':param {} {}: '.format(type(getattr(obj, member)).__name__, member)
     relevant_line = [k for k in doc_lines if k.startswith(templ)]
-
     if relevant_line:
         _help = relevant_line[0].replace(templ, '')
+        return _help
+
+    doc_para = doc.split(':ivar ')
+    templ2 = '{}: '.format(member)
+    relevant_para = [k for k in doc_para if k.startswith(templ2)]
+    if relevant_para:
+        relevant_para = relevant_para[0]
+        _help_lines = relevant_para.splitlines()
+        _help_lines = [k for k in _help_lines if k.strip() and not k.strip().startswith('#')]
+        _help = ' '.join(_help_lines)[len(templ2): ]
 
     return _help
 
