@@ -455,6 +455,27 @@ def _recursive_write(obj, prefix, save_fid):
             _recursive_write(member_val, member_name, save_fid)
 
 
+def _match_template(start_templ, member_templ, _str, exclude_starts):
+    _match = ''
+
+    doc_para = _str.split(start_templ)
+    relevant_para = [k for k in doc_para if k.startswith(member_templ)]
+
+    if not relevant_para:
+        return _match
+
+    assert len(relevant_para) == 1, "multiple matches found for {} {} in:\n{}".find(start_templ, member_templ, _str)
+
+    relevant_para = relevant_para[0]
+    _help_lines = relevant_para.splitlines()
+    if exclude_starts:
+        _help_lines = [k for k in _help_lines if not any(k.startswith(_start) for _start in exclude_starts)]
+
+    _match = ' '.join(_help_lines)[len(member_templ):]
+
+    return _match
+
+
 def help_from_docs(obj, member):
     _help = ''
     doc = inspect.getdoc(obj)
@@ -465,21 +486,23 @@ def help_from_docs(obj, member):
     if not doc_lines:
         return _help
 
-    templ = ':param {} {}: '.format(type(getattr(obj, member)).__name__, member)
-    relevant_line = [k for k in doc_lines if k.startswith(templ)]
-    if relevant_line:
-        _help = relevant_line[0].replace(templ, '')
+    filtered_lines = [k.strip() for k in doc_lines]
+    filtered_lines = list(filter(lambda k: k and not k.startswith(':type ') and not k.startswith('#'), filtered_lines))
+
+    filtered_str = '\n'.join(filtered_lines)
+
+    start_templ = ':param '
+    member_templ = '{} {}: '.format(type(getattr(obj, member)).__name__, member)
+
+    start_templ2 = ':ivar '
+    member_templ2 = '{}: '.format(member)
+
+    _help = _match_template(start_templ, member_templ, filtered_str, (start_templ2, ))
+    if _help:
         return _help
 
-    doc_para = doc.split(':ivar ')
-    templ2 = '{}: '.format(member)
-    relevant_para = [k for k in doc_para if k.startswith(templ2)]
-    if relevant_para:
-        relevant_para = relevant_para[0]
-        _help_lines = relevant_para.splitlines()
-        _help_lines = [k for k in _help_lines if k.strip() and not k.strip().startswith('#')]
-        _help = ' '.join(_help_lines)[len(templ2): ]
 
+    _help = _match_template(start_templ2, member_templ2, filtered_str, (start_templ, ))
     return _help
 
 
