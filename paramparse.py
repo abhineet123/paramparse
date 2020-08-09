@@ -480,7 +480,11 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
     return _match
 
 
-def help_from_docs(obj, member, eval=0):
+def obj_from_docs(obj, member):
+    return literal_eval(help_from_docs(obj, member))
+
+
+def help_from_docs(obj, member):
     _help = ''
     doc = inspect.getdoc(obj)
     if doc is None:
