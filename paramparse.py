@@ -1556,13 +1556,15 @@ def _get_pf(_name, pf):
 
 
 def from_parser(parser, class_name='Params', allow_none_default=1,
-                add_doc=True, add_help=True, to_clipboard=False):
+                add_help=True, to_clipboard=False):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
 
     :param argparse.ArgumentParser parser:
     :param str class_name:
+    :param bool add_help:
+    :param bool to_clipboard:
     :return:
     """
 
@@ -1578,12 +1580,14 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
     out_text = '\tdef __init__(self):\n'
     if '--cfg' not in all_params_names:
         out_text += "\t\tself.cfg = ('', )\n"
-    help_text = '\t\tself.help = {\n'
+    # help_text = '\t\tself.help = {\n'
+    help_text = '\t"""\n'
 
     if parser.description is not None:
-        help_text += "\t\t\t'__desc__': '{}',\n".format(parser.description)
+        # help_text += "\t\t\t'__desc__': '{}',\n".format(parser.description)
+        help_text += "\t{}\n".format(parser.description)
 
-    doc_text = '\t"""\n'
+    # doc_text = '\t"""\n'
 
     for _name in all_params_names:
         __name = _name[2:]
@@ -1591,6 +1595,9 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
             continue
         _param = all_params[_name]
         _help = _param.help
+
+        if _help is None:
+            _help = ''
 
         default = _param.default
         nargs = _param.nargs
@@ -1636,18 +1643,24 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
         var_name = __name.replace('-', '_').replace(' ', '_')
 
         out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
-        help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
+        # help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
 
-        doc_text += '\t:param {} {}: {}\n'.format(_param_type.__name__, var_name, _help)
+        help_text += "\t:ivar {}: {}\n".format(var_name, _help)
+        help_text += "\t:type {}: {}\n\n".format(var_name, _param_type.__name__)
 
-    help_text += "\t\t}"
-    doc_text += '\t"""\n'
+        # doc_text += '\t:param {} {}: {}\n'.format(_param_type.__name__, var_name, _help)
+
+    # help_text += "\t\t}"
+    help_text += '\t"""\n'
+
+    # doc_text += '\t"""\n'
 
     if add_help:
-        out_text += help_text
+        # out_text += help_text
+        out_text = help_text + out_text
 
-    if add_doc:
-        out_text = doc_text + out_text
+    # if add_doc:
+    #     out_text = doc_text + out_text
 
     out_text = header_text + out_text
 
@@ -1677,7 +1690,7 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
 
 
 def from_dict(param_dict, class_name='Params',
-              add_cfg=True, add_doc=True, add_help=True,
+              add_cfg=True, add_help=True,
               to_clipboard=False):
     """
     convert a dictionary into a parameter class compatible with this module
@@ -1685,6 +1698,9 @@ def from_dict(param_dict, class_name='Params',
 
     :param dict param_dict:
     :param str class_name:
+    :param bool add_cfg:
+    :param bool add_help:
+    :param bool to_clipboard:
     :return:
     """
 
@@ -1694,8 +1710,11 @@ def from_dict(param_dict, class_name='Params',
     out_text = '\tdef __init__(self):\n'
     if add_cfg and 'cfg' not in all_params_names:
         out_text += "\t\tself.cfg = ('', )\n"
-    help_text = '\t\tself.help = {\n'
-    doc_text = '\t"""\n'
+
+    # help_text = '\t\tself.help = {\n'
+    help_text = '\t"""\n'
+
+    # doc_text = '\t"""\n'
 
     for _name in all_params_names:
         default = param_dict[_name]
@@ -1709,18 +1728,25 @@ def from_dict(param_dict, class_name='Params',
         var_name = _name.replace('-', '_').replace(' ', '_')
 
         out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
-        help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
 
-        doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, var_name, _help)
+        # help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
+        help_text += "\t:ivar {}: {}\n".format(var_name, _help)
+        help_text += "\t:type {}: {}\n\n".format(var_name, type(default).__name__)
 
-    help_text += "\t\t}"
-    doc_text += '\t"""\n'
+        # doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, var_name, _help)
+
+    # help_text += "\t\t}"
+    help_text += '\t"""\n'
+
+    # doc_text += '\t"""\n'
 
     if add_help:
-        out_text += help_text
+        # out_text += help_text
+        out_text = help_text + out_text
 
-    if add_doc:
-        out_text = doc_text + out_text
+
+    # if add_doc:
+    #     out_text = doc_text + out_text
 
     out_text = header_text + out_text
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
