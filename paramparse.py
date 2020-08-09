@@ -3,12 +3,14 @@ import os
 import re
 import json
 import copy
+import docstring_parser
 import inspect
 import argparse
 from ast import literal_eval
 from pprint import pformat
 from datetime import datetime
 from collections import defaultdict
+from pydoc import locate
 
 import numpy as np
 
@@ -481,16 +483,85 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
 
 
 def obj_from_docs(obj, member):
-    return literal_eval(help_from_docs(obj, member))
+    doc_dict = getattr(obj, '_doc_dict_', None)
+    return literal_eval(doc_dict[member]['help'])
+
+
+def dict_from_str(string):
+    docstring = docstring_parser.parse(string)
+
+    type_dict = defaultdict(lambda: None)
+    param_type_dict = {_meta.args[2]: locate(_meta.args[1]) for _meta in docstring.meta if
+                       len(_meta.args) == 3 and _meta.args[0] == 'param'}
+    main_type_dict = {_meta.args[1]: locate(_meta.description) for _meta in docstring.meta if _meta.args[0] == 'type'}
+    type_dict.update(param_type_dict)
+    type_dict.update(main_type_dict)
+
+    help_dict = defaultdict(lambda: None)
+    param_help_dict = {_meta.args[-1]: _meta.description for _meta in docstring.meta if _meta.args[0] == 'param'}
+    ivar_help_dict = {_meta.args[1]: _meta.description for _meta in docstring.meta if _meta.args[0] == 'ivar'}
+    help_dict.update(param_help_dict)
+    help_dict.update(ivar_help_dict)
+
+    members = set(list(type_dict.keys()) + list(help_dict.keys()))
+
+    # combined_dict = {}
+    # for _member in members:
+    #     _help = help_dict[_member]
+    #     _type = type_dict[_member]
+    #     combined_dict[_member] = {
+    #         'help': _help,
+    #         'type': _type,
+    #     }
+
+    combined_dict = {
+        _member: {
+            'help': help_dict[_member],
+            'type': type_dict[_member],
+        }
+        for _member in members
+    }
+
+    return combined_dict
+
+
+def dict_from_docs(obj_type, existing_dict):
+
+    if obj_type in existing_dict:
+        return
+
+    class_hierarchy = inspect.getmro(obj_type)[:-1][::-1]
+    obj_help_dict = {}
+    for _class in class_hierarchy:
+        if _class in existing_dict:
+            curr_dict = existing_dict[_class]
+        else:
+            doc = inspect.getdoc(_class)
+            if doc is None:
+                continue
+            curr_dict = dict_from_str(doc)
+            existing_dict[_class] = curr_dict
+
+        obj_help_dict.update(curr_dict)
+
+    existing_dict[obj_type] = obj_help_dict
 
 
 def help_from_docs(obj, member):
     _help = ''
-    doc = inspect.getdoc(obj)
-    if doc is None:
+
+    class_hierarchy = inspect.getmro(type(obj))[:-1][::-1]
+    all_doc = ''
+    for _class in class_hierarchy:
+
+        doc = inspect.getdoc(_class)
+        if doc is not None:
+            all_doc += doc + '\n'
+
+    if not all_doc:
         return _help
 
-    doc_lines = doc.splitlines()
+    doc_lines = all_doc.splitlines()
     if not doc_lines:
         return _help
 
@@ -505,11 +576,11 @@ def help_from_docs(obj, member):
     start_templ2 = ':ivar '
     member_templ2 = '{}: '.format(member)
 
-    _help = _match_template(start_templ, member_templ, filtered_str, (start_templ2, ))
+    _help = _match_template(start_templ, member_templ, filtered_str, (start_templ2,))
     if _help:
         return _help
 
-    _help = _match_template(start_templ2, member_templ2, filtered_str, (start_templ, ))
+    _help = _match_template(start_templ2, member_templ2, filtered_str, (start_templ,))
     return _help
 
 
@@ -563,20 +634,28 @@ def _get_valid_members(obj):
     return valid_members
 
 
-def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''):
+def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', obj_name=''):
     """
 
     :param argparse.ArgumentParser parser:
     :param obj:
     :param dict member_to_type:
+    :param dict doc_dict:
     :param str root_name:
     :param str obj_name:
     :return:
     """
     members = _get_valid_members(obj)
 
+    obj_type = type(obj)
+
     assert members, "Invalid composite object with no component members found: {} (type: {})".format(
-        obj, type(obj))
+        obj, obj_type)
+
+    dict_from_docs(obj_type, doc_dict)
+
+    obj_doc_dict = doc_dict[obj_type]
+    setattr(obj, '_doc_dict_', obj_doc_dict)
 
     if obj_name:
         if root_name:
@@ -586,8 +665,15 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
     for member in members:
         if member == 'help':
             continue
+
         default_val = getattr(obj, member)
-        member_type = type_from_docs(obj, member)
+        # member_type = type_from_docs(obj, member)
+
+        try:
+            member_type = obj_doc_dict[member]['type']
+        except KeyError:
+            member_type = None
+
         if member_type is None:
             if default_val is None:
                 print('No type found in docstring for param {} with default as None'.format(member))
@@ -613,7 +699,12 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
                 if not isinstance(_help, str):
                     _help = pformat(_help)
             else:
-                _help = help_from_docs(obj, member)
+                try:
+                    _help = obj_doc_dict[member]['help']
+                except KeyError:
+                    _help = ''
+
+                # _help = help_from_docs(obj, member)
 
             if member_type in (tuple, list):
                 parser.add_argument('--{:s}'.format(member_param_name), type=str_to_tuple,
@@ -635,7 +726,7 @@ def _add_params_to_parser(parser, obj, member_to_type, root_name='', obj_name=''
         else:
             # parameter is itself an instance of some other parameter class so its members must
             # be processed recursively
-            _add_params_to_parser(parser, getattr(obj, member), member_to_type, root_name, member)
+            _add_params_to_parser(parser, getattr(obj, member), member_to_type, doc_dict, root_name, member)
 
 
 def _assign_arg(obj, arg, _id, val, member_to_type, parent_name):
@@ -919,7 +1010,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
     parser = argparse.ArgumentParser(**arg_dict)
     member_to_type = {}
-    _add_params_to_parser(parser, obj, member_to_type)
+    doc_dict = {}
+    _add_params_to_parser(parser, obj, member_to_type, doc_dict)
 
     if args_in is None:
         argv_id = 1
