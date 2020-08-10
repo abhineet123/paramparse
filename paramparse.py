@@ -484,6 +484,11 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
 
 def obj_from_docs(obj, member):
     doc_dict = getattr(obj, '_doc_dict_', None)
+    if doc_dict is None:
+        doc_dict = {}
+        dict_from_docs(type(obj), doc_dict)
+        setattr(obj, '_doc_dict_', doc_dict)
+
     return literal_eval(doc_dict[member]['help'])
 
 
@@ -505,15 +510,6 @@ def dict_from_str(string):
 
     members = set(list(type_dict.keys()) + list(help_dict.keys()))
 
-    # combined_dict = {}
-    # for _member in members:
-    #     _help = help_dict[_member]
-    #     _type = type_dict[_member]
-    #     combined_dict[_member] = {
-    #         'help': _help,
-    #         'type': _type,
-    #     }
-
     combined_dict = {
         _member: {
             'help': help_dict[_member],
@@ -525,26 +521,25 @@ def dict_from_str(string):
     return combined_dict
 
 
-def dict_from_docs(obj_type, existing_dict):
-
-    if obj_type in existing_dict:
+def dict_from_docs(obj_type, doc_dict):
+    if obj_type in doc_dict:
         return
 
     class_hierarchy = inspect.getmro(obj_type)[:-1][::-1]
     obj_help_dict = {}
     for _class in class_hierarchy:
-        if _class in existing_dict:
-            curr_dict = existing_dict[_class]
+        if _class in doc_dict:
+            curr_dict = doc_dict[_class]
         else:
             doc = inspect.getdoc(_class)
             if doc is None:
                 continue
             curr_dict = dict_from_str(doc)
-            existing_dict[_class] = curr_dict
+            doc_dict[_class] = curr_dict
 
         obj_help_dict.update(curr_dict)
 
-    existing_dict[obj_type] = obj_help_dict
+    doc_dict[obj_type] = obj_help_dict
 
 
 def help_from_docs(obj, member):
@@ -1743,7 +1738,6 @@ def from_dict(param_dict, class_name='Params',
     if add_help:
         # out_text += help_text
         out_text = help_text + out_text
-
 
     # if add_doc:
     #     out_text = doc_text + out_text
