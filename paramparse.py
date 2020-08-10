@@ -189,7 +189,7 @@ def match_opt(params, opt_name, print_name=''):
         print_name = opt_name
 
     opt_val = str(getattr(params, opt_name))
-    opt_vals = params.help[opt_name]  # type: dict
+    opt_vals = obj_from_docs(params, opt_name)  # type: dict
 
     matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
     assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
@@ -427,8 +427,8 @@ def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
 
 
 def _recursive_load(obj, loaded_obj, prefix, missing_params):
-    load_members = _get_valid_members(loaded_obj)
-    obj_members = _get_valid_members(obj)
+    load_members = get_valid_members(loaded_obj)
+    obj_members = get_valid_members(obj)
 
     for member in obj_members:
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
@@ -444,7 +444,7 @@ def _recursive_load(obj, loaded_obj, prefix, missing_params):
 
 
 def _recursive_write(obj, prefix, save_fid):
-    obj_members = _get_valid_members(obj)
+    obj_members = get_valid_members(obj)
 
     for member in obj_members:
         if member == 'help':
@@ -483,11 +483,11 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
 
 
 def obj_from_docs(obj, member):
-    doc_dict = getattr(obj, '_doc_dict_', None)
+    doc_dict = getattr(type(obj), '__doc_dict__', None)
     if doc_dict is None:
         doc_dict = {}
         dict_from_docs(type(obj), doc_dict)
-        setattr(obj, '_doc_dict_', doc_dict)
+        setattr(type(obj), '__doc_dict__', doc_dict)
 
     return literal_eval(doc_dict[member]['help'])
 
@@ -617,7 +617,7 @@ def type_from_docs(obj, member):
     return None
 
 
-def _get_valid_members(obj):
+def get_valid_members(obj):
     obj_t = type(obj)
     prop_attr = [attr for attr in dir(obj_t) if isinstance(getattr(obj_t, attr), property)]
     valid_members = tuple([attr for attr in dir(obj) if
@@ -640,7 +640,7 @@ def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', o
     :param str obj_name:
     :return:
     """
-    members = _get_valid_members(obj)
+    members = get_valid_members(obj)
 
     obj_type = type(obj)
 
@@ -650,7 +650,7 @@ def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', o
     dict_from_docs(obj_type, doc_dict)
 
     obj_doc_dict = doc_dict[obj_type]
-    setattr(obj, '_doc_dict_', obj_doc_dict)
+    setattr(type(obj), '__doc_dict__', obj_doc_dict)
 
     if obj_name:
         if root_name:
