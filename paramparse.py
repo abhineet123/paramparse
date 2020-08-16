@@ -1471,24 +1471,28 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 try:
                     arg_type = member_to_type[_name]
                 except KeyError:
-                    raise ValueError('Invalid param name {} in argument {}'.format(_name, _arg))
-                assert arg_type in (tuple, list, MultiPath, MultiCFG), \
-                    "incremental value specification found for argument {} of invalid type: {}".format(_name, arg_type)
-                try:
-                    old_val = _args_dict[_name]
-                except KeyError:
-                    pass
-                    # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
-                    #     _name, _arg))
-                else:
-                    if arg_type is MultiPath:
-                        sep = '_'
-                    elif arg_type is MultiCFG:
-                        sep = '::'
+                    msg = 'Invalid param name {} in argument {}'.format(_name, _arg)
+                    if allow_unknown:
+                        print(msg)
                     else:
-                        sep = ','
-                    _val = '{}{}{}'.format(old_val, sep, _val)
-                    pass
+                        raise ValueError(msg)
+                else:
+                    assert arg_type in (tuple, list, MultiPath, MultiCFG), \
+                        "incremental value specification found for argument {} of invalid type: {}".format(_name, arg_type)
+                    try:
+                        old_val = _args_dict[_name]
+                    except KeyError:
+                        pass
+                        # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
+                        #     _name, _arg))
+                    else:
+                        if arg_type is MultiPath:
+                            sep = '_'
+                        elif arg_type is MultiCFG:
+                            sep = '::'
+                        else:
+                            sep = ','
+                        _val = '{}{}{}'.format(old_val, sep, _val)
             else:
                 try:
                     _name, _val = _arg.split('=')
