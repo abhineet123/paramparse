@@ -1319,6 +1319,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 for i, _curr_sec_arg in enumerate(_curr_sec_args):
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
+                    _curr_sec_sub_names = _curr_sec_name.split('_')
+                    if len(_curr_sec_sub_names) > 1:
+                        for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
+                            _curr_sec_args[i] = _curr_sec_args[i].replace(f'__name{sub_name_id}__', sub_name)
+
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__parent__', _curr_sec_parent_name)
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__root__', _curr_sec_root_name)
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__full__', _curr_sec_full_name)
