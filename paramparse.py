@@ -897,10 +897,13 @@ def read_cfg(_cfg):
                 def _get_sec_names(_sec_names, _tuples, _id, _nums):
                     for _num in _tuples[_id]:
                         __nums = _nums[:]
-                        if _num < 0:
-                            __nums.append('n' + str(abs(_num)))
+                        if isinstance(_num, str):
+                            __nums.append(_num)
                         else:
-                            __nums.append(str(_num))
+                            if _num < 0:
+                                __nums.append('n' + str(abs(_num)))
+                            else:
+                                __nums.append(str(_num))
                         if _id < len(_tuples) - 1:
                             _get_sec_names(_sec_names, _tuples, _id + 1, __nums)
                         else:
