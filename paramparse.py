@@ -453,12 +453,34 @@ def _recursive_write(obj, prefix, save_fid):
         member_name = '{:s}.{:s}'.format(prefix, member) if prefix else member
         if isinstance(member_val, (int, bool, float, str, MultiPath, MultiCFG)):
             save_fid.write('{:s}={:s}\n'.format(member_name, scalar_to_string(member_val)))
-        elif isinstance(member_val, tuple):
+        elif isinstance(member_val, (tuple, list)):
             save_fid.write('{:s}={:s}\n'.format(member_name, tuple_to_string(member_val)))
         elif isinstance(member_val, dict):
             save_fid.write('{:s}={:s}\n'.format(member_name, dict_to_string(member_val)))
         else:
             _recursive_write(member_val, member_name, save_fid)
+
+
+def to_dict(obj):
+    """
+
+    :param obj:
+    :rtype: dict
+    """
+    obj_dict = {}
+    obj_members = get_valid_members(obj)
+
+    for member in obj_members:
+        if member == 'help':
+            continue
+
+        member_val = getattr(obj, member)
+        if isinstance(member_val, (int, bool, float, str, MultiPath, MultiCFG, tuple, list, dict)):
+            obj_dict[member] = member_val
+        else:
+            obj_dict[member] = to_dict(member_val)
+
+    return obj_dict
 
 
 def _match_template(start_templ, member_templ, _str, exclude_starts):
@@ -1486,7 +1508,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         raise ValueError(msg)
                 else:
                     assert arg_type in (tuple, list, MultiPath, MultiCFG), \
-                        "incremental value specification found for argument {} of invalid type: {}".format(_name, arg_type)
+                        "incremental value specification found for argument {} of invalid type: {}".format(_name,
+                                                                                                           arg_type)
                     try:
                         old_val = _args_dict[_name]
                     except KeyError:
