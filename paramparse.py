@@ -3,7 +3,6 @@ import os
 import re
 import json
 import copy
-import docstring_parser
 import inspect
 import argparse
 from ast import literal_eval
@@ -11,13 +10,19 @@ from pprint import pformat
 from datetime import datetime
 from collections import defaultdict
 from pydoc import locate
-
 import numpy as np
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+try:
+    import docstring_parser_custom
+except:
+    docstring_parser_available = 0
+else:
+    docstring_parser_available = 1
 
 
 class MultiString(str):
@@ -515,7 +520,10 @@ def obj_from_docs(obj, member):
 
 
 def dict_from_str(string):
-    docstring = docstring_parser.parse(string)
+    if not docstring_parser_available:
+        return {}
+
+    docstring = docstring_parser_custom.parse(string)
 
     type_dict = defaultdict(lambda: None)
     param_type_dict = {_meta.args[2]: locate(_meta.args[1]) for _meta in docstring.meta if
@@ -1347,7 +1355,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     _curr_sec_sub_names = _curr_sec_name.split('_')
                     if len(_curr_sec_sub_names) > 1:
                         for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
-                            _curr_sec_args[i] = _curr_sec_args[i].replace(f'__name{sub_name_id}__', sub_name)
+                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name{}__'.format(sub_name_id), sub_name)
 
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__parent__', _curr_sec_parent_name)
                     _curr_sec_args[i] = _curr_sec_args[i].replace('__root__', _curr_sec_root_name)

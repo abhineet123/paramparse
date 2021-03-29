@@ -5,7 +5,7 @@ with open("ReadMe.md", "r") as fh:
 
 setuptools.setup(
     name="paramparse",
-    version="1.4.2",
+    version="1.4.8",
     author="Abhineet Singh",
     author_email="abhineet.iiita@gmail.com",
     description="argparse wrapper to allow hierarchically nested class based parameters",
@@ -16,7 +16,6 @@ setuptools.setup(
     py_modules=["paramparse"],
     packages=setuptools.find_packages(),
     install_requires=[
-        'docstring_parser',
     ],
     classifiers=[
         "Programming Language :: Python",
