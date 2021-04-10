@@ -1499,6 +1499,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 else:
                     pf = _get_pf(_name, pf)
                     continue
+
             if '+=' in _arg:
                 try:
                     _name, _val = _arg.split('+=')
@@ -1506,32 +1507,46 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     raise ValueError('Invalid argument provided: {} :: {}'.format(_arg, e))
                 if pf and not suspend_pf:
                     _name = '{}.{}'.format(pf, _name)
-                try:
-                    arg_type = member_to_type[_name]
-                except KeyError:
-                    msg = 'Invalid param name {} in argument {}'.format(_name, _arg)
-                    if allow_unknown:
-                        print(msg)
-                    else:
-                        raise ValueError(msg)
+
+                if ',' in _name:
+                    _names_recursive = []
+                    _recursive_append(_name, _names_recursive)
+
+                    # print('{} --> {}'.format(_name, _names_recursive))
+                    # print('')
                 else:
-                    assert arg_type in (tuple, list, MultiPath, MultiCFG), \
-                        "incremental value specification found for argument {} of invalid type: {}".format(_name,
-                                                                                                           arg_type)
+                    _names_recursive = [_name, ]
+
+                for __name in _names_recursive:
+                    __val = _val
                     try:
-                        old_val = _args_dict[_name]
+                        arg_type = member_to_type[__name]
                     except KeyError:
-                        pass
-                        # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
-                        #     _name, _arg))
-                    else:
-                        if arg_type is MultiPath:
-                            sep = '_'
-                        elif arg_type is MultiCFG:
-                            sep = '::'
+                        msg = 'Invalid param name {} in argument {}'.format(__name, _arg)
+                        if allow_unknown:
+                            print(msg)
                         else:
-                            sep = ','
-                        _val = '{}{}{}'.format(old_val, sep, _val)
+                            raise ValueError(msg)
+                    else:
+                        assert arg_type in (tuple, list, MultiPath, MultiCFG), \
+                            "incremental value specification found for argument {} of invalid type: {}".format(__name,
+                                                                                                               arg_type)
+                        try:
+                            old_val = _args_dict[__name]
+                        except KeyError:
+                            pass
+                            # print('Accumulative value provided for uninitialized arg: {} :: {}'.format(
+                            #     __name, _arg))
+                        else:
+                            if arg_type is MultiPath:
+                                sep = '_'
+                            elif arg_type is MultiCFG:
+                                sep = '::'
+                            else:
+                                sep = ','
+                            __val = '{}{}{}'.format(old_val, sep, _val)
+                    _args_in.append('--{}={}'.format(__name, __val))
+                    _args_dict[__name] = __val
             else:
                 try:
                     _name, _val = _arg.split('=')
@@ -1540,16 +1555,27 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if pf:
                     _name = '{}.{}'.format(pf, _name)
 
-            _args_in.append('--{}={}'.format(_name, _val))
-            _args_dict[_name] = _val
+                if ',' in _name:
+                    _names_recursive = []
+                    _recursive_append(_name, _names_recursive)
+
+                    # print('{} --> {}'.format(_name, _names_recursive))
+                    # print('')
+                else:
+                    _names_recursive = [_name, ]
+
+                _args_in += ['--{}={}'.format(__name, _val) for __name in _names_recursive]
+                _args_dict.update({__name: _val for __name in _names_recursive})
 
         args_in = _args_in
 
         _args_in = []
         for _arg_str in args_in:
             _name, _val = _arg_str.split('=')
-            if _val and not _val.startswith('#'):
-                _args_in.append(_arg_str)
+            if not _val or _val.startswith('#'):
+                continue
+            _args_in.append(_arg_str)
+
         args_in = _args_in
         if help_mode:
             args_in.insert(0, help_mode)
@@ -1565,6 +1591,25 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     # print('test_seq_ids: ', self.test_seq_ids)
 
     return args_in
+
+
+def _recursive_append(name, out_names, names_lists=None, _id=0, out_name=None, ):
+    if names_lists is None:
+        names_lists = [name.split(',') for name in name.split('.')]
+        out_name = ''
+        _id = 0
+
+    if _id == len(names_lists):
+        out_names.append(out_name)
+        return
+
+    name_list = names_lists[_id]
+    for name in name_list:
+        if _id == 0:
+            out_name = name
+        else:
+            out_name += '.' + name
+        _recursive_append(None, out_names, names_lists, _id + 1, out_name)
 
 
 def _get_pf(_name, pf):
