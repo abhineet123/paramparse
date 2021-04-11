@@ -11,6 +11,7 @@ from datetime import datetime
 from collections import defaultdict
 from pydoc import locate
 import numpy as np
+import time
 
 try:
     import cPickle as pickle
@@ -827,6 +828,24 @@ def _process_args_from_parser(obj, args, member_to_type):
 def read_cfg(_cfg):
     if not _cfg:
         return
+    cfg_cache_path = _cfg + '.cache'
+    if os.path.exists(cfg_cache_path):
+        cfg_cache_mtime = os.path.getmtime(cfg_cache_path)
+        cfg_mtime = os.path.getmtime(_cfg)
+
+        # print('cfg_mtime: {}'.format(cfg_mtime))
+        # print('cfg_cache_mtime: {}'.format(cfg_cache_mtime))
+
+        if cfg_mtime <= cfg_cache_mtime:
+            print('Loading cfg data from cache {:s}'.format(cfg_cache_path))
+            with open(cfg_cache_path, 'rb') as f:
+                nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name = pickle.load(f)
+            return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+
+        cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
+        cfg_mtime_local = time.ctime(cfg_mtime)
+        print('cfg_cache_mtime_local: {}'.format(cfg_cache_mtime_local))
+        print('cfg_mtime_local: {}'.format(cfg_mtime_local))
 
     print('Reading parameters from {:s}'.format(_cfg))
     file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
@@ -989,7 +1008,12 @@ def read_cfg(_cfg):
     nodes_by_fullname = defaultdict(list)
     _find_children(nodes, nodes_by_fullname, _sections, 0, 0, curr_root, n_sections)
 
-    return nodes, dict(nodes_by_fullname), _sections, file_args, file_args_offset, root_sec_name
+    nodes_by_fullname = dict(nodes_by_fullname)
+
+    with open(cfg_cache_path, 'wb') as f:  # Python 3: open(..., 'wb')
+        pickle.dump([nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name], f)
+
+    return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
 
 
 def process_dict(params, *args, **kwargs):
