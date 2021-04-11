@@ -837,15 +837,15 @@ def read_cfg(_cfg):
         # print('cfg_cache_mtime: {}'.format(cfg_cache_mtime))
 
         if cfg_mtime <= cfg_cache_mtime:
-            print('Loading cfg data from cache {:s}'.format(cfg_cache_path))
+            print('Loading cfg data from {:s}'.format(cfg_cache_path))
             with open(cfg_cache_path, 'rb') as f:
                 nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name = pickle.load(f)
             return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
 
-        cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
-        cfg_mtime_local = time.ctime(cfg_mtime)
-        print('cfg_cache_mtime_local: {}'.format(cfg_cache_mtime_local))
-        print('cfg_mtime_local: {}'.format(cfg_mtime_local))
+        # cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
+        # cfg_mtime_local = time.ctime(cfg_mtime)
+        # print('cfg_cache_mtime_local: {}'.format(cfg_cache_mtime_local))
+        # print('cfg_mtime_local: {}'.format(cfg_mtime_local))
 
     print('Reading parameters from {:s}'.format(_cfg))
     file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
