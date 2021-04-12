@@ -1163,7 +1163,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 assert prev_cfg_data, "repeat cfg found without previous cfg data: {}".format(_cfg)
                 print('Processing repeat parameters from {:s}'.format(_cfg))
             else:
-                prev_cfg_data = read_cfg(_cfg)
+                prev_cfg_data = read_cfg(_cfg, enable_cache=cfg_cache)
 
                 # _sections = [(k, i) for k, i in _sections]
 
