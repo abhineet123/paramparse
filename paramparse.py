@@ -1037,7 +1037,7 @@ def process_dict(params, *args, **kwargs):
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
-            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=0):
+            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1):
     """
 
     :param obj:
@@ -1049,6 +1049,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     :param str prog:
     :param str | None usage:
     :param int allow_unknown:
+    :param int cfg_cache:
     :return:
     """
     arg_dict = {}
