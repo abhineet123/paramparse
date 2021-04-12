@@ -825,11 +825,11 @@ def _process_args_from_parser(obj, args, member_to_type):
         _assign_arg(obj, key_parts, 0, val, member_to_type, '')
 
 
-def read_cfg(_cfg):
+def read_cfg(_cfg, enable_cache=1):
     if not _cfg:
         return
     cfg_cache_path = _cfg + '.cache'
-    if os.path.exists(cfg_cache_path):
+    if enable_cache and os.path.exists(cfg_cache_path):
         cfg_cache_mtime = os.path.getmtime(cfg_cache_path)
         cfg_mtime = os.path.getmtime(_cfg)
 
@@ -1010,8 +1010,9 @@ def read_cfg(_cfg):
 
     nodes_by_fullname = dict(nodes_by_fullname)
 
-    with open(cfg_cache_path, 'wb') as f:  # Python 3: open(..., 'wb')
-        pickle.dump([nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name], f)
+    if enable_cache:
+        with open(cfg_cache_path, 'wb') as f:  # Python 3: open(..., 'wb')
+            pickle.dump([nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name], f)
 
     return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
 
@@ -1036,7 +1037,7 @@ def process_dict(params, *args, **kwargs):
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
-            prog='', usage='%(prog)s [options]', allow_unknown=0):
+            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=0):
     """
 
     :param obj:
