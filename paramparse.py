@@ -402,6 +402,33 @@ def str_to_basic_type(_val):
     return _val_parsed
 
 
+def copy_recursive(src, dst=None, include_protected=1):
+    valid_members = get_valid_members(src, include_protected=include_protected)
+
+    if dst is None:
+        dst = type(src)()
+
+    try:
+        copy_excluded = getattr(src, '_copy_excluded')
+    except AttributeError:
+        copy_excluded = []
+
+    for member in valid_members:
+        if member == 'help':
+            continue
+
+        member_val = getattr(src, member)
+        if member in copy_excluded or member_val is None or isinstance(member_val, (int, bool, float, str, MultiPath, MultiCFG, tuple)):
+            setattr(dst, member, member_val)
+        elif isinstance(member_val, (dict, list)):
+            setattr(dst, member, member_val.copy())
+        else:
+            # dst_member = getattr(dst, member)
+            member_val_copy = copy_recursive(member_val, include_protected=include_protected)
+            setattr(dst, member, member_val_copy)
+    return dst
+
+
 def save(obj, dir_name, out_name='params.bin'):
     save_path = os.path.join(dir_name, out_name)
     pickle.dump(obj, open(save_path, "wb"))
@@ -648,13 +675,14 @@ def type_from_docs(obj, member):
     return None
 
 
-def get_valid_members(obj):
+def get_valid_members(obj, include_protected=0):
     obj_t = type(obj)
     prop_attr = [attr for attr in dir(obj_t) if isinstance(getattr(obj_t, attr), property)]
     valid_members = tuple([attr for attr in dir(obj) if
                            attr not in prop_attr and
                            not callable(getattr(obj, attr))
-                           and not attr.startswith("_")
+                           and not attr.startswith("__")
+                           and (include_protected or not attr.startswith("_"))
                            ])
 
     return valid_members
@@ -1037,7 +1065,7 @@ def process_dict(params, *args, **kwargs):
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
-            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1):
+            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1, cmd_args=None):
     """
 
     :param obj:
@@ -1068,12 +1096,15 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     _add_params_to_parser(parser, obj, member_to_type, doc_dict)
 
     if args_in is None:
-        argv_id = 1
+        if cmd_args is None:
+            cmd_args = sys.argv[1:]
+
+        argv_id = 0
 
         if not cfg:
             # check for cfg files specified at command line
-            if cmd and len(sys.argv) > 1 and ('--cfg' in sys.argv[1] or sys.argv[1].startswith('cfg=')):
-                _, arg_val = sys.argv[1].split('=')
+            if cmd and len(cmd_args) > 0 and ('--cfg' in cmd_args[0] or cmd_args[0].startswith('cfg=')):
+                _, arg_val = cmd_args[0].split('=')
                 cfg = arg_val
                 argv_id += 1
                 if hasattr(obj, 'cfg'):
@@ -1100,6 +1131,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         for _cfg in cfg:
             _cfg_sec = []
             if ':' not in _cfg:
+                """no explicit section specified for the CFG so read its common sections"""
                 _cfg = '{}:__common__'.format(_cfg)
 
             """alternate specification for parent specific sections for ease of selecting child section"""
@@ -1129,10 +1161,19 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
             for i, __sec_id in enumerate(repeated_sec_ids):
 
+                _exclude_common_secs = 0
+
                 if _cfg_sec[__sec_id].startswith('++'):
+                    if _cfg_sec[__sec_id].startswith('+++'):
+                        _exclude_common_secs = 1
+                        _cfg_name_start_pos = 3
+                    else:
+                        _cfg_name_start_pos = 2
+                        _exclude_common_secs = 0
+
                     """these sections are exclusive to the repeated cfg files so excluded from the default one"""
                     _exclusive_secs = 1
-                    __sec_names = _cfg_sec[__sec_id][2:].split('+')
+                    __sec_names = _cfg_sec[__sec_id][_cfg_name_start_pos:].split('+')
                     repeat_sec_names = __sec_names
                     _cfg_sec[__sec_id] = ''
                 else:
@@ -1140,28 +1181,33 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     __sec_names = _cfg_sec[__sec_id].split('+')
                     repeat_sec_names = __sec_names[1:]
                     _cfg_sec[__sec_id] = __sec_names[0]
+
                 start_include_id = __sec_id + 1
                 end_include_id = repeated_sec_ids[i + 1] if i < len(repeated_sec_ids) - 1 else len(_cfg_sec)
                 for __name in repeat_sec_names:
                     included_secs = [__name, ] + _cfg_sec[start_include_id:end_include_id]
-                    repeated_cfgs.append((_cfg, included_secs, 1))
+                    repeated_cfgs.append((_cfg, included_secs, 1, _exclude_common_secs))
+
                 if _exclusive_secs:
                     excluded_ids += list(range(start_include_id, end_include_id))
 
             _cfg_sec = [k for i, k in enumerate(_cfg_sec) if i not in excluded_ids and k]
-            cfg_file_list.append((_cfg, _cfg_sec, 0))
+            cfg_file_list.append((_cfg, _cfg_sec, 0, 0))
             cfg_file_list += repeated_cfgs
 
         """process each cfg file and its sections"""
         args_in = []
         prev_cfg_data = []
-        for _cfg, _cfg_sec, _cfg_repeat in cfg_file_list:
+        for _cfg, _cfg_sec, _cfg_repeat, _exclude_common_secs in cfg_file_list:
             if not _cfg:
                 continue
 
             if _cfg_repeat:
                 assert prev_cfg_data, "repeat cfg found without previous cfg data: {}".format(_cfg)
-                print('Processing repeat parameters from {:s}'.format(_cfg))
+                txt = 'Processing repeat parameters from {:s}'.format(_cfg)
+                if _exclude_common_secs:
+                    txt = '{} without common sections'.format(txt)
+                print(txt)
             else:
                 prev_cfg_data = read_cfg(_cfg, enable_cache=cfg_cache)
 
@@ -1182,9 +1228,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg_sec = [_sec for _sec in _cfg_sec if _sec not in excluded_cfg_sec]
                 assert _cfg_sec, 'No included sections found for {}'.format(_cfg)
 
-            """add common sections"""
-            common_section_names = [s for __i, s in enumerate(section_names) if nodes[section_seq_ids[__i]].is_common]
-            _cfg_sec += common_section_names
+            if not _exclude_common_secs:
+                """add common sections"""
+                common_section_names = [s for __i, s in enumerate(section_names) if
+                                        nodes[section_seq_ids[__i]].is_common]
+                _cfg_sec += common_section_names
 
             """unique section names"""
             _cfg_sec = list(set(_cfg_sec))
@@ -1483,12 +1531,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if cmd:
             # reset prefix before command line args
             args_in.append('@')
-            cmd_args = list(sys.argv[argv_id:])
-            if cmd_args and cmd_args[0] in ('--h', '-h', '--help'):
-                # args_in.insert(0, cmd_args[0])
-                help_mode = cmd_args[0]
-                cmd_args = cmd_args[1:]
-            args_in += cmd_args
+            noncfg_cmd_args = list(cmd_args[argv_id:])
+            if noncfg_cmd_args and noncfg_cmd_args[0] in ('--h', '-h', '--help'):
+                # args_in.insert(0, noncfg_cmd_args[0])
+                help_mode = noncfg_cmd_args[0]
+                noncfg_cmd_args = noncfg_cmd_args[1:]
+            args_in += noncfg_cmd_args
 
         args_in = [k if k.startswith('--') else '--{}'.format(k) for k in args_in]
 
