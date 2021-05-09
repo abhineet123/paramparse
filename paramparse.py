@@ -856,7 +856,14 @@ def _process_args_from_parser(obj, args, member_to_type):
 def read_cfg(_cfg, enable_cache=1):
     if not _cfg:
         return
-    cfg_cache_path = _cfg + '.cache'
+    _cfg_dir = os.path.dirname(_cfg)
+    _cfg_name = os.path.basename(_cfg)
+
+    _cfg_cache_dir = os.path.join(_cfg_dir, '.cache')
+    os.makedirs(_cfg_cache_dir, exist_ok=True)
+
+    cfg_cache_path = os.path.join(_cfg_cache_dir, _cfg_name + '.cache')
+
     if enable_cache and os.path.exists(cfg_cache_path):
         cfg_cache_mtime = os.path.getmtime(cfg_cache_path)
         cfg_mtime = os.path.getmtime(_cfg)
