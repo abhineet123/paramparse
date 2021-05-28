@@ -418,7 +418,8 @@ def copy_recursive(src, dst=None, include_protected=1):
             continue
 
         member_val = getattr(src, member)
-        if member in copy_excluded or member_val is None or isinstance(member_val, (int, bool, float, str, MultiPath, MultiCFG, tuple)):
+        if member in copy_excluded or member_val is None or isinstance(member_val, (
+                int, bool, float, str, MultiPath, MultiCFG, tuple)):
             setattr(dst, member, member_val)
         elif isinstance(member_val, (dict, list)):
             setattr(dst, member, member_val.copy())
@@ -1719,6 +1720,105 @@ def _get_pf(_name, pf):
     return pf
 
 
+def from_flags(FLAGS, class_name='Params', allow_none_default=1,
+               add_help=True, to_clipboard=False):
+    flags_dict = FLAGS.flag_values_dict()
+    flags_help = FLAGS.get_help()
+
+    all_params_names = list(flags_dict.keys())
+
+    flags_help_lines = flags_help.split('\n')
+
+    excluded_line_ids = [i for i, line in enumerate(flags_help_lines) if not line]
+    excluded_line_ids += [i + 1 for i in excluded_line_ids]
+
+    flags_help_lines = [line.strip() for i, line in enumerate(flags_help_lines) if i not in excluded_line_ids]
+
+    start_ids = [i for i, line in enumerate(flags_help_lines) if line.startswith('--')]
+
+    start_ids.append(len(flags_help_lines))
+
+    param_name_to_help = {
+        flags_help_lines[i][2:]: ' '.join(flags_help_lines[start_ids[__id]:start_ids[__id + 1]])[2:]
+        for __id, i in enumerate(start_ids[:-1])
+    }
+
+    param_name_to_help2 = {
+        k.split(': ')[0]: v for k, v in param_name_to_help.items()
+
+    }
+
+    param_name_to_help3 = {
+        k.lstrip('[no]'): v[len(k) + 1:] for k, v in param_name_to_help2.items()
+
+    }
+
+    header_text = 'class {}:\n'.format(class_name)
+    out_text = '\tdef __init__(self):\n'
+    if '--cfg' not in all_params_names:
+        out_text += "\t\tself.cfg = ()\n"
+    # help_text = '\t\tself.help = {\n'
+    help_text = '\t"""\n'
+
+    for _param_name, _param_val in flags_dict.items():
+        if not _param_name:
+            continue
+
+        try:
+            _help = param_name_to_help3[_param_name]
+        except KeyError:
+            _help = ''
+
+        _param_type = type(_param_val)
+
+        if _param_type in (list, tuple):
+            if _param_type is str:
+                default_str = "['{}, ]'".format(_param_val)
+            else:
+                default_str = '[{} ,]'.format(_param_val)
+        else:
+            if _param_type is str:
+                default_str = "'{}'".format(_param_val)
+            else:
+                default_str = '{}'.format(_param_val)
+
+        var_name = _param_name.replace('-', '_').replace(' ', '_')
+
+        out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
+        # help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
+
+        help_text += "\t:ivar {}: {}\n".format(var_name, _help)
+        help_text += "\t:type {}: {}\n\n".format(var_name, _param_type.__name__)
+
+    help_text += '\t"""\n'
+    if add_help:
+        out_text = help_text + out_text
+
+    out_text = header_text + out_text
+
+    if to_clipboard:
+        try:
+            import pyperclip
+
+            pyperclip.copy(out_text)
+            spam = pyperclip.paste()
+        except BaseException as e:
+            print('Copying to clipboard failed: {}'.format(e))
+        else:
+            print('Class definition copied to clipboard')
+
+    else:
+        class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
+        out_fname = '{}.py'.format(class_name_snake_case)
+        out_path = os.path.abspath(out_fname)
+        if os.path.exists(out_path):
+            print('output path already exists so not writing to it: {}'.format(out_path))
+        else:
+            print('Writing output to {}'.format(out_path))
+            with open(out_path, 'w') as fid:
+                fid.write(out_text)
+
+
 def from_parser(parser, class_name='Params', allow_none_default=1,
                 add_help=True, to_clipboard=False):
     """
@@ -1743,7 +1843,7 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if '--cfg' not in all_params_names:
-        out_text += "\t\tself.cfg = ('', )\n"
+        out_text += "\t\tself.cfg = ()\n"
     # help_text = '\t\tself.help = {\n'
     help_text = '\t"""\n'
 
@@ -1873,7 +1973,7 @@ def from_dict(param_dict, class_name='Params',
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
     if add_cfg and 'cfg' not in all_params_names:
-        out_text += "\t\tself.cfg = ('', )\n"
+        out_text += "\t\tself.cfg = ()\n"
 
     # help_text = '\t\tself.help = {\n'
     help_text = '\t"""\n'
