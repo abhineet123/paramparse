@@ -1720,8 +1720,8 @@ def _get_pf(_name, pf):
     return pf
 
 
-def from_flags(FLAGS, class_name='Params', allow_none_default=1,
-               add_help=True, to_clipboard=False):
+def from_flags(FLAGS, class_name='Params', allow_none_default=True,
+               add_help=True, to_clipboard=False, sort_by_name=True):
     flags_dict = FLAGS.flag_values_dict()
     flags_help = FLAGS.get_help()
 
@@ -1760,9 +1760,15 @@ def from_flags(FLAGS, class_name='Params', allow_none_default=1,
     # help_text = '\t\tself.help = {\n'
     help_text = '\t"""\n'
 
-    for _param_name, _param_val in flags_dict.items():
+    _param_names = list(flags_dict.keys())
+    if sort_by_name:
+        _param_names.sort()
+
+    for _param_name in _param_names:
         if not _param_name:
             continue
+
+        _param_val = flags_dict[_param_name]
 
         try:
             _help = param_name_to_help3[_param_name]
@@ -1819,8 +1825,8 @@ def from_flags(FLAGS, class_name='Params', allow_none_default=1,
                 fid.write(out_text)
 
 
-def from_parser(parser, class_name='Params', allow_none_default=1,
-                add_help=True, to_clipboard=False):
+def from_parser(parser, class_name='Params', allow_none_default=True,
+                add_help=True, to_clipboard=False, sort_by_name=True):
     """
     convert argparse.ArgumentParser object into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -1838,7 +1844,10 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
     all_params = optionals.copy()
     all_params.update(positionals)
 
-    all_params_names = sorted(list(all_params.keys()))
+    all_params_names = list(all_params.keys())
+
+    if sort_by_name:
+        all_params_names.sort()
 
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
@@ -1955,7 +1964,7 @@ def from_parser(parser, class_name='Params', allow_none_default=1,
 
 def from_dict(param_dict, class_name='Params',
               add_cfg=True, add_help=True,
-              to_clipboard=False):
+              to_clipboard=False, sort_by_name=True):
     """
     convert a dictionary into a parameter class compatible with this module
     writes the class code to a python source file named  <class_name>.py
@@ -1968,7 +1977,10 @@ def from_dict(param_dict, class_name='Params',
     :return:
     """
 
-    all_params_names = sorted(list(param_dict.keys()))
+    all_params_names = list(param_dict.keys())
+
+    if sort_by_name:
+        all_params_names.sort()
 
     header_text = 'class {}:\n'.format(class_name)
     out_text = '\tdef __init__(self):\n'
@@ -2040,7 +2052,7 @@ def from_dict(param_dict, class_name='Params',
 
 def from_function(fn, class_name='', start=0, only_kw=True,
                   add_cfg=True, add_doc=True, add_help=True,
-                  to_clipboard=False):
+                  to_clipboard=False, sort_by_name=True):
     args, varargs, varkw, defaults = inspect.getargspec(fn)
 
     if not class_name:
@@ -2058,7 +2070,7 @@ def from_function(fn, class_name='', start=0, only_kw=True,
 
     from_dict(args_dict, class_name, add_cfg=add_cfg,
               add_doc=add_doc, add_help=add_help,
-              to_clipboard=to_clipboard)
+              to_clipboard=to_clipboard, sort_by_name=sort_by_name)
 
 
 if __name__ == '__main__':
