@@ -873,10 +873,14 @@ def read_cfg(_cfg, enable_cache=1):
         # print('cfg_cache_mtime: {}'.format(cfg_cache_mtime))
 
         if cfg_mtime <= cfg_cache_mtime:
-            print('Loading cfg data from {:s}'.format(cfg_cache_path))
-            with open(cfg_cache_path, 'rb') as f:
-                nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name = pickle.load(f)
-            return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+            try:
+                print('Loading cfg data from {:s}'.format(cfg_cache_path))
+                with open(cfg_cache_path, 'rb') as f:
+                    nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name = pickle.load(f)
+            except:
+                pass
+            else:
+                return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
 
         # cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
         # cfg_mtime_local = time.ctime(cfg_mtime)
