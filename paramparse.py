@@ -1724,10 +1724,42 @@ def _get_pf(_name, pf):
     return pf
 
 
-def from_flags(FLAGS, class_name='Params', allow_none_default=True,
+def to_flags(flags, params, allow_missing=0, verbose=0):
+    flags_dict = flags.flag_values_dict()
+    param_names = list(flags_dict.keys())
+
+    param_names.sort()
+
+    valid_param_names = [_param_name for _param_name in param_names if hasattr(params, _param_name)]
+    missing_param_names = [_param_name for _param_name in param_names if not hasattr(params, _param_name)]
+
+    if missing_param_names:
+        msg = 'found missing params:\n{}\n'.format('\n\t'.join(missing_param_names))
+        if allow_missing:
+            print(msg)
+        else:
+            raise AssertionError(msg)
+
+    if verbose:
+        print('setting flags for {} params:\n{}\n'.format(len(valid_param_names), '\n\t'.join(valid_param_names)))
+
+    for _param_name in valid_param_names:
+        if not _param_name:
+            continue
+
+        # flags_dict[_param_name] = getattr(params, _param_name)
+
+        setattr(flags, _param_name,  getattr(params, _param_name))
+
+
+    print()
+
+
+
+def from_flags(flags, class_name='Params', allow_none_default=True,
                add_help=True, to_clipboard=False, sort_by_name=True):
-    flags_dict = FLAGS.flag_values_dict()
-    flags_help = FLAGS.get_help()
+    flags_dict = flags.flag_values_dict()
+    flags_help = flags.get_help()
 
     all_params_names = list(flags_dict.keys())
 
