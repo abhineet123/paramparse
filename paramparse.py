@@ -689,7 +689,7 @@ def get_valid_members(obj, include_protected=0):
     return valid_members
 
 
-def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', obj_name=''):
+def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', obj_name='', verbose=0):
     """
 
     :param argparse.ArgumentParser parser:
@@ -731,7 +731,8 @@ def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', o
 
         if member_type is None:
             if default_val is None:
-                print('No type found in docstring for param {} with default as None'.format(member))
+                if verbose:
+                    print('No type found in docstring for param {} with default as None'.format(member))
                 continue
             # print('Deduced type {} from docstring for param {} with default as None'.format(member_type, member))
             else:
@@ -781,7 +782,8 @@ def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', o
         else:
             # parameter is itself an instance of some other parameter class so its members must
             # be processed recursively
-            _add_params_to_parser(parser, getattr(obj, member), member_to_type, doc_dict, root_name, member)
+            _add_params_to_parser(parser, getattr(obj, member), member_to_type, doc_dict, root_name, member,
+                                  verbose=verbose)
 
 
 def _assign_arg(obj, arg, _id, val, member_to_type, parent_name):
@@ -1077,7 +1079,8 @@ def process_dict(params, *args, **kwargs):
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
-            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1, cmd_args=None):
+            prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1,
+            cmd_args=None, verbose=0):
     """
 
     :param obj:
@@ -1105,7 +1108,7 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     parser = argparse.ArgumentParser(**arg_dict)
     member_to_type = {}
     doc_dict = {}
-    _add_params_to_parser(parser, obj, member_to_type, doc_dict)
+    _add_params_to_parser(parser, obj, member_to_type, doc_dict, verbose=verbose)
 
     if args_in is None:
         if cmd_args is None:
