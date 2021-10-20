@@ -2,7 +2,6 @@ import sys
 import os
 import re
 import json
-import copy
 import inspect
 import argparse
 from ast import literal_eval
@@ -11,6 +10,7 @@ from datetime import datetime
 from collections import defaultdict
 from pydoc import locate
 import numpy as np
+
 # import time
 
 try:
@@ -18,8 +18,8 @@ try:
 except ImportError:
     import pickle
 
-
 import docstring_parser_custom
+
 
 # try:
 #     import docstring_parser_custom
@@ -580,6 +580,8 @@ def dict_from_str(string, verbose):
         for _member in members
     }
 
+    combined_dict['__description__'] = (docstring.short_description, docstring.long_description)
+
     return combined_dict
 
 
@@ -1112,6 +1114,15 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     member_to_type = {}
     doc_dict = {}
     _add_params_to_parser(parser, obj, member_to_type, doc_dict, verbose=verbose)
+
+    obj_doc_dict = doc_dict[type(obj)]
+
+    try:
+        short_description, long_description = obj_doc_dict['__description__']
+    except KeyError:
+        pass
+    else:
+        parser.description = short_description + '\n' + long_description
 
     if args_in is None:
         if cmd_args is None:

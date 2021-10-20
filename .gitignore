@@ -4,6 +4,7 @@
 *~
 .gitpub/
 __pycache__/
+debug/
 paramparse.egg-info/
 .idea/
 dist/
