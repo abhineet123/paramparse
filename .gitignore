@@ -2,6 +2,7 @@
 *.dll
 *.pyc
 *~
+.gitpub/
 __pycache__/
 paramparse.egg-info/
 .idea/
@@ -25,3 +26,5 @@ build/
 *.avi
 *.wmv
 *.mkv
+gitu.sh
+mitu.sh

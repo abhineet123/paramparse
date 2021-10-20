@@ -11,19 +11,20 @@ from datetime import datetime
 from collections import defaultdict
 from pydoc import locate
 import numpy as np
-import time
+# import time
 
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
-try:
-    import docstring_parser_custom
-except:
-    docstring_parser_available = 0
-else:
-    docstring_parser_available = 1
+
+import docstring_parser_custom
+
+# try:
+#     import docstring_parser_custom
+# except:
+#     docstring_parser_custom = None
 
 
 class MultiString(str):
@@ -182,26 +183,36 @@ class Node:
         return ancestors
 
 
-def match_opt(params, opt_name, print_name=''):
-    """
+# def obj_from_docs(obj, member, verbose):
+#     doc_dict = getattr(type(obj), '__doc_dict__', None)
+#     if doc_dict is None:
+#         doc_dict = {}
+#         dict_from_docs(type(obj), doc_dict, verbose)
+#         setattr(type(obj), '__doc_dict__', doc_dict)
+#
+#     return literal_eval(doc_dict[member]['help'])
 
-    :param params:
-    :param str opt_name:
-    :param str print_name:
-    :return:
-    """
 
-    if not print_name:
-        print_name = opt_name
-
-    opt_val = str(getattr(params, opt_name))
-    opt_vals = obj_from_docs(params, opt_name)  # type: dict
-
-    matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
-    assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
-    assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
-
-    return matching_val[0]
+# def match_opt(params, opt_name, verbose, print_name=''):
+#     """
+#
+#     :param params:
+#     :param str opt_name:
+#     :param str print_name:
+#     :return:
+#     """
+#
+#     if not print_name:
+#         print_name = opt_name
+#
+#     opt_val = str(getattr(params, opt_name))
+#     opt_vals = obj_from_docs(params, opt_name, verbose)  # type: dict
+#
+#     matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
+#     assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
+#     assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
+#
+#     return matching_val[0]
 
 
 def _find_children(nodes, nodes_by_fullname, _headings, root_level, _start_id, _root_node, n_headings):
@@ -538,19 +549,11 @@ def _match_template(start_templ, member_templ, _str, exclude_starts):
     return _match
 
 
-def obj_from_docs(obj, member):
-    doc_dict = getattr(type(obj), '__doc_dict__', None)
-    if doc_dict is None:
-        doc_dict = {}
-        dict_from_docs(type(obj), doc_dict)
-        setattr(type(obj), '__doc_dict__', doc_dict)
-
-    return literal_eval(doc_dict[member]['help'])
-
-
-def dict_from_str(string):
-    if not docstring_parser_available:
-        return {}
+def dict_from_str(string, verbose):
+    # if docstring_parser_custom is None:
+    #     if verbose:
+    #         print('docstring parser is not available')
+    #     return {}
 
     docstring = docstring_parser_custom.parse(string)
 
@@ -580,7 +583,7 @@ def dict_from_str(string):
     return combined_dict
 
 
-def dict_from_docs(obj_type, doc_dict):
+def dict_from_docs(obj_type, doc_dict, verbose):
     if obj_type in doc_dict:
         return
 
@@ -593,7 +596,7 @@ def dict_from_docs(obj_type, doc_dict):
             doc = inspect.getdoc(_class)
             if doc is None:
                 continue
-            curr_dict = dict_from_str(doc)
+            curr_dict = dict_from_str(doc, verbose)
             doc_dict[_class] = curr_dict
 
         obj_help_dict.update(curr_dict)
@@ -707,7 +710,7 @@ def _add_params_to_parser(parser, obj, member_to_type, doc_dict, root_name='', o
     assert members, "Invalid composite object with no component members found: {} (type: {})".format(
         obj, obj_type)
 
-    dict_from_docs(obj_type, doc_dict)
+    dict_from_docs(obj_type, doc_dict, verbose)
 
     obj_doc_dict = doc_dict[obj_type]
     setattr(type(obj), '__doc_dict__', obj_doc_dict)
@@ -1752,11 +1755,9 @@ def to_flags(flags, params, allow_missing=0, verbose=0):
 
         # flags_dict[_param_name] = getattr(params, _param_name)
 
-        setattr(flags, _param_name,  getattr(params, _param_name))
-
+        setattr(flags, _param_name, getattr(params, _param_name))
 
     print()
-
 
 
 def from_flags(flags, class_name='Params', allow_none_default=True,
@@ -1903,8 +1904,10 @@ def from_parser(parser, class_name='Params', allow_none_default=True,
 
     for _name in all_params_names:
         __name = _name[2:]
+
         if not __name or _name in ('--h', '-h', '--help'):
             continue
+
         _param = all_params[_name]
         _help = _param.help
 
@@ -1920,8 +1923,8 @@ def from_parser(parser, class_name='Params', allow_none_default=True,
             _param_type = _param.type
 
         if default is None:
-            if _param_type is None:
-                raise IOError('Both type and default are None for params {}'.format(__name))
+
+            assert _param_type is not None, 'Both type and default are None for params {}'.format(__name)
 
             msg = 'None default found for param: {}'.format(__name)
             if allow_none_default:
