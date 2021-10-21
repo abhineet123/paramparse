@@ -1122,7 +1122,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     except KeyError:
         pass
     else:
-        parser.description = short_description + '\n' + long_description
+        if short_description is not None:
+            parser.description = short_description
+            if long_description is not None:
+                parser.description += '\n' + long_description
+        elif long_description is not None:
+            parser.description = long_description
 
     if args_in is None:
         if cmd_args is None:
