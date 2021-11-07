@@ -86,6 +86,7 @@ Sections can be hierarchically nested to any number of levels
 Multiple sections can be started in a single line by specifying their names separated by commas
 - all lines in such a multi-name section (inluding any section hierarchies therein) are replicated for each one of the names
 - this can reduce redundancy when specifying sections that differ in ways that can be derived from their names using placeholders (see next section)
+- long lists of numeric names can be specified succinctly using `range()` and `irange()` placeholders that can be used with 1, 2 or 3 arguments similar to the python `range` function with `irange` being inclusive with respect to its upper bound
 
 <a id="command_s_"></a>
 ## commands
@@ -122,4 +123,6 @@ Paramparse supports the following placeholders:
 |`__parent_list_ratio__`      | same as `__list_ratio__` but with parent's name     |
 |`__range__`      | name of the section converted into a list by extracting 1, 2 or 3 underscore separated numbers and using them as arguments to the python `range` function |
 |`__parent_range__`      | same as `__range__`  but with parent's name    |
+|`range()`      | generate a list with 1, 2 or 3 comma separated arguments within the parenthesis using similar syntax as the python `range`  function   |
+|`irange()`      |  same as `range()`  but with inclusive upper bound  |
 
