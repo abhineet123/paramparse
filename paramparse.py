@@ -26,6 +26,31 @@ import docstring_parser_custom
 # except:
 #     docstring_parser_custom = None
 
+class CFG:
+    """
+    convenience base class that any parameter class can inherit to
+    avoid having to declare cfg specific parameters
+
+    :ivar cfg: One or more plain text CFG files from which  to read parameter values;
+    these will be overridden by commandline arguments
+    :type cfg: tuple[str]
+
+    :ivar cfg_ext: extension of the CFG files;
+    this is automatically appended to the specified CFG files without any extension
+    defaults to 'cfg' so that a file named cvat.cfg can be specified simply as cvat
+    :type cfg: str
+
+    :ivar cfg_root: path to the folder containing CFG files;
+    defaults to 'cfg' where all CFG files would be expected to be in a sub folder named cfg in the
+    current working directory
+    :type cfg: str
+    """
+
+    def __init__(self):
+        self.cfg = ()
+        self.cfg_root = 'cfg'
+        self.cfg_ext = 'cfg'
+
 
 class MultiString(str):
     def __init__(self, val, sep):
