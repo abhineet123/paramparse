@@ -87,6 +87,7 @@ Multiple sections can be started in a single line by specifying their names sepa
 - all lines in such a multi-name section (inluding any section hierarchies therein) are replicated for each one of the names
 - this can reduce redundancy when specifying sections that differ in ways that can be derived from their names using placeholders (see next section)
 - long lists of numeric names can be specified succinctly using `range()` and `irange()` placeholders that can be used with 1, 2 or 3 arguments similar to the python `range` function with `irange` being inclusive with respect to its upper bound
+    - multiple ranges can be joined  with each other as well as with manually specified lists using `+` operator
 
 <a id="command_s_"></a>
 ## commands
