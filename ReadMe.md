@@ -114,6 +114,7 @@ Sections can have many uses:
 
 Placeholders are reserved keywords that can will be replaced by their respective texts while parsing a cfg file.
 Paramparse supports the following placeholders:
+
 | __placeholder__      | __replacement__ |
 | ----------- | ----------- | 
 |`__name__`      | name of the section      |
