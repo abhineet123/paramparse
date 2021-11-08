@@ -70,7 +70,7 @@ Sections provide a means to read a cfg file selectively rather than in its entir
 Each section is a named group of consecutive lines within a cfg file that is preceded and succeeded by a line starting with two or more `#`:
 - preceding line specifies the name of the section
 - succeeding line can either specify the name of the next section or simply mark the end of the current section if it is nameless
-- All lines without an explicit section are considered to be in an implicit _common_ section that is always read while parsing a cfg in addition to the specified section
+- lines without an explicit section are considered to be in an implicit `_common_ `section that is always read while parsing a cfg (in addition to the specified sections)
 
 <a id="hierarchical_nestin_g_"></a>
 ## Hierarchical nesting
