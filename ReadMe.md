@@ -70,23 +70,25 @@ Sections provide a means to read a cfg file selectively rather than in its entir
 Each section is a named group of consecutive lines within a cfg file that is preceded and succeeded by a line starting with two or more `#`:
 - preceding line specifies the name of the section
 - succeeding line can either specify the name of the next section or simply mark the end of the current section if it is nameless
-- lines without an explicit section are considered to be in an implicit `_common_ `section that is always read while parsing a cfg (in addition to the specified sections)
+- lines without an explicit section are considered to be in an implicit `common` section that is always read while parsing a cfg (in addition to the specified sections)
 
 <a id="hierarchical_nestin_g_"></a>
 ## Hierarchical nesting
-Sections can be hierarchically nested to any number of levels
-- level at which a section lies is determined by the number of `#` preceding its name - `##` denotes level 1, `###` denotes level 2 and so on (lines starting with a single `#` are regarded as comments and ignored)
+Sections can be nested to any number of hierarchical levels
+- level at which a section lies is determined by the number of `#` preceding its name 
+    - `##` denotes level 1, `###` denotes level 2 and so on
+    - lines starting with a single `#` are regarded as comments and ignored
 - each section at level 2 or greater (i.e. with 3 or more `#` preceding its name) is considered to be nested within the nearest section before it that is one level above it
 - a section can have multiple children
 - a section can only have a single parent 
-- a section can be included in a command only if all its ancenstors have been also been included otherwise it will be considered
+- a section can be included in a command only if all its ancenstors have been also been included 
 - sections nested within different hierarchies in the same cfg file can have identical names
 
 <a id="replication_"></a>
 ## Replication
 Multiple sections can be started in a single line by specifying their names separated by commas
 - all lines in such a multi-name section (inluding any section hierarchies therein) are replicated for each one of the names
-- this can reduce redundancy when specifying sections that differ in ways that can be derived from their names using placeholders (see next section)
+- this can reduce redundancy when specifying sections that differ only in ways that can be derived from their names using [placeholders](#placeholders)
 - long lists of numeric names can be specified succinctly using `range()` and `irange()` placeholders that can be used with 1, 2 or 3 arguments similar to the python `range` function with `irange` being inclusive with respect to its upper bound
     - multiple ranges can be joined  with each other as well as with manually specified lists using `+` operator
 
@@ -94,8 +96,8 @@ Multiple sections can be started in a single line by specifying their names sepa
 ## Commands
 Sections are specified in a command by following the name of the cfg file with a colon (`:`) and a list of section names also separated with colons
 - name of a parent section should precede that of its children
-- if the cfg file has two identically named sections in different hierarchies and only one of them is to be read (while reading all ancestors of both sections), its name should be separated from its parent by a hyphen (`-`) instead of a `:` 
-- if a cfg file needs to be read again with a different section hierarchy, name of the root of this hierarchy can be prefixed by `++` or `+++` 
+- if the cfg file has multiple identically-named sections in different hierarchies and only one of them is to be read (while reading all ancestors of more than one of them), its name should be separated from its parent by a hyphen (`-`) instead of a `:` 
+- if a cfg file needs to be read again with a different section hierarchy, name of the root section of this hierarchy can be prefixed by `++` or `+++` 
     - `++` causes the common sections to be read again in addition to the new section hierarchy
     - `+++` causes the common sections to be be skipped so that only the new section hierarchy is read
 

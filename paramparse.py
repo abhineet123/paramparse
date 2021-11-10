@@ -1591,13 +1591,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             # reset prefix before command line args
             args_in.append('@')
             noncfg_cmd_args = list(cmd_args[argv_id:])
-            if noncfg_cmd_args and noncfg_cmd_args[0] in ('--h', '-h', '--help'):
-                # args_in.insert(0, noncfg_cmd_args[0])
-                help_mode = noncfg_cmd_args[0]
-                noncfg_cmd_args = noncfg_cmd_args[1:]
+            # if noncfg_cmd_args and noncfg_cmd_args[0] in ('--h', '-h', '--help'):
+            #     # args_in.insert(0, noncfg_cmd_args[0])
+            #     help_mode = noncfg_cmd_args[0]
+            #     noncfg_cmd_args = noncfg_cmd_args[1:]
             args_in += noncfg_cmd_args
 
-        args_in = [k if k.startswith('--') else '--{}'.format(k) for k in args_in]
+        args_in = [k if k.startswith('--') or k == '-h' else '--{}'.format(k) for k in args_in]
 
         # pf: Prefix to be added to all subsequent arguments to avoid very long argument names
         # for deeply nested module parameters:
@@ -1610,6 +1610,10 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         _args_dict = {}
         pf = ''
         for _id, _arg in enumerate(args_in):
+            if _arg in ('--h', '-h', '--help'):
+                help_mode = _arg
+                continue
+
             _arg = _arg[2:]
             suspend_pf = 0
             if _arg.startswith('@'):
@@ -1662,8 +1666,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                             raise ValueError(msg)
                     else:
                         assert arg_type in (tuple, list, MultiPath, MultiCFG), \
-                            "incremental value specification found for argument {} of invalid type: {}".format(__name,
-                                                                                                               arg_type)
+                            "incremental value specification found for argument {} of invalid type: {}".format(
+                                __name, arg_type)
                         try:
                             old_val = _args_dict[__name]
                         except KeyError:
