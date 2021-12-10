@@ -120,17 +120,30 @@ Paramparse supports the following placeholders:
 | __placeholder__      | __replacement__ |
 | ----------- | ----------- | 
 |`__name__`      | name of the section      |
+|`__name<i>__`      | `i`<sup>th</sup> component of the section name treated as being composed of underscore-separated components (`i` is 0-based) |
 |`__parent__`      | name of the parent of the section      |
+|`__g_parent__`      | name of the grandparent of the section      |
+|`__gg_parent__`      | name of the great grandparent of the section      |
 |`__root__`      | name of the root section of the section's hierarchy    |
 |`__full__`      | names of the section and its parent separated by an underscore    |
+|`__g_full__`      | names of the section, its parent and its grandparent separated by underscores |
+|`__gg_full__`      | names of the section, its parent, its grandparent and its great grandparent separated by underscores |
 |`__ratio__`      | name of the section interpreted as a number and divided by 100     |
 |`__parent_ratio__`      | same as `__ratio__`  but with parent's name    |
+|`__g_parent_ratio__`      | same as `__ratio__`  but with grandparent's name    |
+|`__gg_parent_ratio__`      | same as `__ratio__`  but with great grandparent's name    |
 |`__list__`      |  name of the section converted into a list by splitting it with underscores (i.e. each component of its name separated by an underscore becomes an element of the list)     |
 |`__parent_list__`      | same as `__list__`  but with parent's name |
+|`__g_parent_list__`      | same as `__list__`  but with grandparent's name |
+|`__gg_parent_list__`      | same as `__list__`  but with great grandparent's name |
 |`__list_ratio__`      | same as `__list__` with each list member interpreted as a number and divided by 100     |
 |`__parent_list_ratio__`      | same as `__list_ratio__` but with parent's name     |
+|`__g_parent_list_ratio__`      | same as `__list_ratio__` but with grandparent's name     |
+|`__gg_parent_list_ratio__`      | same as `__list_ratio__` but with great grandparent's name     |
 |`__range__`      | name of the section converted into a list by extracting 1, 2 or 3 underscore separated numbers and using them as arguments to the python `range` function |
 |`__parent_range__`      | same as `__range__`  but with parent's name    |
+|`__g_parent_range__`      | same as `__range__`  but with grandparent's name    |
+|`__gg_parent_range__`      | same as `__range__`  but with great grandparent's name    |
 |`range()`      | generate a list with 1, 2 or 3 comma separated arguments within the parenthesis using similar syntax as the python `range`  function   |
 |`irange()`      |  same as `range()`  but with inclusive upper bound  |
 

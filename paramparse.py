@@ -1489,26 +1489,79 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     if len(_curr_sec_sub_names) > 1:
                         for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
                             _curr_sec_args[i] = _curr_sec_args[i].replace('__name{}__'.format(sub_name_id), sub_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace(
+                        '__parent__', _curr_sec_parent_name)
+                    if '__g_parent__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_parent__', _curr_sec_node.parent.parent.name)
+                    if '__gg_parent__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_parent__',
+                            _curr_sec_node.parent.parent.parent.name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace(
+                        '__root__', _curr_sec_root_name)
 
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent__', _curr_sec_parent_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__root__', _curr_sec_root_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__full__', _curr_sec_full_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_full__',
-                                                                  _curr_sec_parent_full_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace(
+                        '__full__', _curr_sec_full_name)
+                    _curr_sec_args[i] = _curr_sec_args[i].replace(
+                        '__parent_full__',
+                        _curr_sec_parent_full_name)
+                    if '__g_full__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_full__',
+                            '{}_{}_{}'.format(
+                                _curr_sec_node.name,
+                                _curr_sec_node.parent.name,
+                                _curr_sec_node.parent.parent.name,
+                            )
+                        )
+                    if '__gg_full__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_full__',
+                            '{}_{}_{}_{}'.format(
+                                _curr_sec_node.name,
+                                _curr_sec_node.parent.name,
+                                _curr_sec_node.parent.parent.name,
+                                _curr_sec_node.parent.parent.parent.name
+                            )
+                        )
 
                     if '__ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__ratio__',
-                                                                      str(float(_curr_sec_name) / 100.0))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__ratio__',
+                            str(float(_curr_sec_name) / 100.0))
                     if '__parent_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_ratio__',
-                                                                      str(float(_curr_sec_parent_name) / 100.0))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__parent_ratio__',
+                            str(float(_curr_sec_parent_name) / 100.0))
+                    if '__g_parent_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_parent_ratio__',
+                            str(float(_curr_sec_node.parent.parent.name) / 100.0))
+                    if '__gg_parent_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_parent_ratio__',
+                            str(float(_curr_sec_node.parent.parent.parent.name) / 100.0))
+
                     if '__list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__list__',
-                                                                      ','.join(_curr_sec_name.split('_')))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__list__',
+                            ','.join(_curr_sec_name.split('_')))
 
                     if '__parent_list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_list__',
-                                                                      ','.join(_curr_sec_parent_name.split('_')))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__parent_list__',
+                            ','.join(_curr_sec_parent_name.split('_')))
+
+                    if '__g_parent_list__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_parent_list__',
+                            ','.join(_curr_sec_node.parent.parent.name.split('_')))
+
+                    if '__gg_parent_list__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_parent_list__',
+                            ','.join(_curr_sec_node.parent.parent.parent.name.split('_')))
 
                     def name_to_list_ratio(_name):
                         temp = _name.split('_')
@@ -1520,20 +1573,44 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                         return ','.join(temp)
 
                     if '__list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__list_ratio__',
-                                                                      name_to_list_ratio(_curr_sec_name))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__list_ratio__',
+                            name_to_list_ratio(_curr_sec_name))
 
                     if '__parent_list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_list_ratio__',
-                                                                      name_to_list_ratio(_curr_sec_parent_name))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__parent_list_ratio__',
+                            name_to_list_ratio(_curr_sec_parent_name))
+
+                    if '__g_parent_list_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_parent_list_ratio__',
+                            name_to_list_ratio(_curr_sec_node.parent.parent.name))
+
+                    if '__gg_parent_list_ratio__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_parent_list_ratio__',
+                            name_to_list_ratio(_curr_sec_node.parent.parent.parent.name))
 
                     if '__range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__range__',
-                                                                      ':'.join(_curr_sec_name.split('_')))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__range__',
+                            ':'.join(_curr_sec_name.split('_')))
 
                     if '__parent_range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace('__parent_range__',
-                                                                      ':'.join(_curr_sec_parent_name.split('_')))
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__parent_range__',
+                            ':'.join(_curr_sec_parent_name.split('_')))
+
+                    if '__g_parent_range__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__g_parent_range__',
+                            ':'.join(_curr_sec_node.parent.parent.name.split('_')))
+
+                    if '__gg_parent_range__' in _curr_sec_args[i]:
+                        _curr_sec_args[i] = _curr_sec_args[i].replace(
+                            '__gg_parent_range__',
+                            ':'.join(_curr_sec_node.parent.parent.parent.name.split('_')))
 
                 _sec_args += _curr_sec_args
 
