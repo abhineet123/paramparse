@@ -1595,6 +1595,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 if len(_curr_sec_sub_names) > 1:
                     for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
                         phs_sub[(f'%N{sub_name_id}%', f'__name{sub_name_id}__',)] = sub_name
+                        if sub_name_id > 0:
+                            phs_sub[(f'%N{sub_name_id}*%', f'__name{sub_name_id}*__',)] = '_'.join(
+                                _curr_sec_sub_names[sub_name_id:])
 
                 """
                 only replace these if the placeholder actually exists since the 
