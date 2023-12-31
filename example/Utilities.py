@@ -11,7 +11,7 @@ class DebugParams:
         self.write_thresh = (0, 0)
         self.write_to_bin = 1
         self.memory_tracking = 0
-        self.cmp_root_dirs = ('../../isl_labelling_tool/tracking_module/log', 'log')
+        self.cmp_root_dirs = ('../../isl_labelling_tool/deep_mdp/log', 'log')
         self.help = {
             'write_state_info': 'write matrices containing the target state information to files '
                                 'on disk (for debugging purposes)',

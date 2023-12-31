@@ -81,7 +81,7 @@ Sections can be nested to any number of hierarchical levels
 - each section at level 2 or greater (i.e. with 3 or more `#` preceding its name) is considered to be nested within the nearest section before it that is one level above it
 - a section can have multiple children
 - a section can only have a single parent 
-- a section can be included in a command only if all its ancenstors have been also been included 
+- a section can be included in a command only if all its ancestors have also been included 
 - sections nested within different hierarchies in the same cfg file can have identical names
 
 <a id="replication_"></a>
@@ -89,8 +89,8 @@ Sections can be nested to any number of hierarchical levels
 Multiple sections can be started in a single line by specifying their names separated by commas
 - all lines in such a multi-name section (inluding any section hierarchies therein) are replicated for each one of the names
 - this can reduce redundancy when specifying sections that differ only in ways that can be derived from their names using [placeholders](#placeholders)
-- long lists of numeric names can be specified succinctly using `range()` and `irange()` placeholders that can be used with 1, 2 or 3 arguments similar to the python `range` function with `irange` being inclusive with respect to its upper bound
-    - multiple ranges can be joined  with each other as well as with manually specified lists using `+` operator
+- long lists of numeric names can be specified succinctly using `range()` and `irange()` placeholders that can be used with 1, 2 or 3 arguments similar to the python `range` function, with `irange` being inclusive with respect to its upper bound
+    - multiple disjointed ranges can be joined  with each other as well as with manually specified lists using `+` operator, e,g. range(3, 6)+irange(10, 13)+21,22 = 3,4,5,10,11,12,13,21,22
 
 <a id="command_s_"></a>
 ## Commands
@@ -114,36 +114,37 @@ Sections can have many uses:
 <a id="placeholder_s_"></a>
 # Placeholders
 
-Placeholders are reserved keywords that can will be replaced by their respective texts while parsing a cfg file.
+Placeholders are reserved keywords that or variables will be replaced by their respective texts while parsing a cfg file.
 Paramparse supports the following placeholders:
 
 | __placeholder__      | __replacement__ |
 | ----------- | ----------- | 
-|`__name__`      | name of the section      |
-|`__name<i>__`      | `i`<sup>th</sup> component of the section name treated as being composed of underscore-separated components (`i` is 0-based) |
-|`__parent__`      | name of the parent of the section      |
-|`__g_parent__`      | name of the grandparent of the section      |
-|`__gg_parent__`      | name of the great grandparent of the section      |
-|`__root__`      | name of the root section of the section's hierarchy    |
-|`__full__`      | names of the section and its parent separated by an underscore    |
-|`__g_full__`      | names of the section, its parent and its grandparent separated by underscores |
-|`__gg_full__`      | names of the section, its parent, its grandparent and its great grandparent separated by underscores |
-|`__ratio__`      | name of the section interpreted as a number and divided by 100     |
-|`__parent_ratio__`      | same as `__ratio__`  but with parent's name    |
-|`__g_parent_ratio__`      | same as `__ratio__`  but with grandparent's name    |
-|`__gg_parent_ratio__`      | same as `__ratio__`  but with great grandparent's name    |
-|`__list__`      |  name of the section converted into a list by splitting it with underscores (i.e. each component of its name separated by an underscore becomes an element of the list)     |
-|`__parent_list__`      | same as `__list__`  but with parent's name |
-|`__g_parent_list__`      | same as `__list__`  but with grandparent's name |
-|`__gg_parent_list__`      | same as `__list__`  but with great grandparent's name |
-|`__list_ratio__`      | same as `__list__` with each list member interpreted as a number and divided by 100     |
-|`__parent_list_ratio__`      | same as `__list_ratio__` but with parent's name     |
-|`__g_parent_list_ratio__`      | same as `__list_ratio__` but with grandparent's name     |
-|`__gg_parent_list_ratio__`      | same as `__list_ratio__` but with great grandparent's name     |
-|`__range__`      | name of the section converted into a list by extracting 1, 2 or 3 underscore separated numbers and using them as arguments to the python `range` function |
-|`__parent_range__`      | same as `__range__`  but with parent's name    |
-|`__g_parent_range__`      | same as `__range__`  but with grandparent's name    |
-|`__gg_parent_range__`      | same as `__range__`  but with great grandparent's name    |
+|`%N%`/`__name__`      | name of the section      |
+|`%N<i>%`/`__name<i>__`      | `i`<sup>th</sup> component of the section name if that name is treated as being composed of underscore-separated components (`i` is 0-based) |
+|`%P%`/`__parent__`      | name of the parent of the section      |
+|`%GP%`/`__g_parent__`      | name of the grandparent of the section      |
+|`%GGP`/`__gg_parent__`      | name of the great grandparent of the section      |
+|`%R%`/`__root__`      | name of the root section of the section's hierarchy    |
+|`%F%`/`__full__`      | names of the section and its parent separated by an underscore    |
+|`%PF%`/`__parent_full__`      | names of the section's parent and its grand parent separated by an underscore    |
+|`%GF%`/`__g_full__`      | names of the section, its parent and its grandparent separated by underscores |
+|`%GGF%`/`__gg_full__`      | names of the section, its parent, its grandparent and its great grandparent separated by underscores |
+|`%RI%`/`__ratio__`      | name of the section interpreted as a number and divided by 100     |
+|`%PRI%`/`__parent_ratio__`      | same as `__ratio__`  but with parent's name    |
+|`%GPRI%`/`__g_parent_ratio__`      | same as `__ratio__`  but with grandparent's name    |
+|`%GGPRI%`/`__gg_parent_ratio__`      | same as `__ratio__`  but with great grandparent's name    |
+|`%L%`/`__list__`      |  name of the section converted into a list by splitting it with underscores (i.e. each component of its name separated by an underscore becomes an element of the list)     |
+|`%PL%`/`__parent_list__`      | same as `__list__`  but with parent's name |
+|`%GPL%`/`__g_parent_list__`      | same as `__list__`  but with grandparent's name |
+|`%GGPL%`/`__gg_parent_list__`      | same as `__list__`  but with great grandparent's name |
+|`%LRI%`/`__list_ratio__`      | same as `__list__` with each list member interpreted as a number and divided by 100     |
+|`%PLRI%`/`__parent_list_ratio__`      | same as `__list_ratio__` but with parent's name     |
+|`%GPLRI%`/`__g_parent_list_ratio__`      | same as `__list_ratio__` but with grandparent's name     |
+|`%GGPLRI%`/`__gg_parent_list_ratio__`      | same as `__list_ratio__` but with great grandparent's name     |
+|`%RA%`/`__range__`      | name of the section converted into a list by extracting 1, 2 or 3 underscore separated numbers and using them as arguments to the python `range` function |
+|`%PRA%`/`__parent_range__`      | same as `__range__`  but with parent's name    |
+|`%GPRA%`/`__g_parent_range__`      | same as `__range__`  but with grandparent's name    |
+|`%GGPRA%`/`__gg_parent_range__`      | same as `__range__`  but with great grandparent's name    |
 |`range()`      | generate a list with 1, 2 or 3 comma separated arguments within the parenthesis using similar syntax as the python `range`  function   |
 |`irange()`      |  same as `range()`  but with inclusive upper bound  |
 

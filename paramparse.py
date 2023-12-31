@@ -207,37 +207,122 @@ class Node:
             parent = parent.parent
         return ancestors
 
+    def p(self):
+        return self.parent.name
 
-# def obj_from_docs(obj, member, verbose):
-#     doc_dict = getattr(type(obj), '__doc_dict__', None)
-#     if doc_dict is None:
-#         doc_dict = {}
-#         dict_from_docs(type(obj), doc_dict, verbose)
-#         setattr(type(obj), '__doc_dict__', doc_dict)
-#
-#     return literal_eval(doc_dict[member]['help'])
+    def gp(self):
+        return self.parent.parent.name
+
+    def ggp(self):
+        return self.parent.parent.parent.name
+
+    def gf(self):
+        return f'{self.name}_{self.p()}_{self.gp()}'
+
+    def ggf(self):
+        return f'{self.name}_{self.p()}_{self.gp()}_{self.ggp()}'
+
+    @staticmethod
+    def name_to_ratio(name):
+        return str(float(name) / 100.0)
+
+    def ri(self):
+        return self.name_to_ratio(self.name)
+
+    def pri(self):
+        return self.name_to_ratio(self.p())
+
+    def gpri(self):
+        return self.name_to_ratio(self.gp())
+
+    def ggpri(self):
+        return self.name_to_ratio(self.ggp())
+
+    @staticmethod
+    def name_to_list(name):
+        return ','.join(name.split('_'))
+
+    def l_(self):
+        return self.name_to_list(self.name)
+
+    def pl(self):
+        return self.name_to_list(self.p())
+
+    def gpl(self):
+        return self.name_to_list(self.gp())
+
+    def ggpl(self):
+        return self.name_to_list(self.ggp())
+
+    @staticmethod
+    def name_to_list_ratio(_name):
+        temp = _name.split('_')
+        for k_id, k in enumerate(temp):
+            if k.startswith('n'):
+                k = k.replace('n', '-')
+            k = str(float(k) / 100.0)
+            temp[k_id] = k
+        return ','.join(temp)
+
+    def lri(self):
+        return self.name_to_list_ratio(self.name)
+
+    def plri(self):
+        return self.name_to_list_ratio(self.p())
+
+    def gplri(self):
+        return self.name_to_list_ratio(self.gp())
+
+    def ggplri(self):
+        return self.name_to_list_ratio(self.ggp())
+
+    @staticmethod
+    def name_to_range(name):
+        return ':'.join(name.split('_'))
+
+    def ra(self):
+        return self.name_to_range(self.name)
+
+    def pra(self):
+        return self.name_to_range(self.p())
+
+    def gpra(self):
+        return self.name_to_range(self.gp())
+
+    def ggpra(self):
+        return self.name_to_range(self.ggp())
 
 
-# def match_opt(params, opt_name, verbose, print_name=''):
-#     """
-#
-#     :param params:
-#     :param str opt_name:
-#     :param str print_name:
-#     :return:
-#     """
-#
-#     if not print_name:
-#         print_name = opt_name
-#
-#     opt_val = str(getattr(params, opt_name))
-#     opt_vals = obj_from_docs(params, opt_name, verbose)  # type: dict
-#
-#     matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
-#     assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
-#     assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
-#
-#     return matching_val[0]
+def obj_from_docs(obj, member, verbose=False):
+    doc_dict = getattr(type(obj), '__doc_dict__', None)
+    if doc_dict is None:
+        doc_dict = {}
+        dict_from_docs(type(obj), doc_dict, verbose)
+        setattr(type(obj), '__doc_dict__', doc_dict)
+
+    return literal_eval(doc_dict[member]['help'])
+
+
+def match_opt(params, opt_name, verbose, print_name=''):
+    """
+
+    :param params:
+    :param str opt_name:
+    :param str print_name:
+    :return:
+    """
+
+    if not print_name:
+        print_name = opt_name
+
+    opt_val = str(getattr(params, opt_name))
+    opt_vals = obj_from_docs(params, opt_name, verbose)  # type: dict
+
+    matching_val = [k for k in opt_vals.keys() if opt_val in [str(_val) for _val in opt_vals[k]]]
+    assert matching_val, "No matches found for {} {} in\n{}".format(print_name, opt_val, pformat(opt_vals))
+    assert len(matching_val) == 1, "Multiple matches for {} {} found: {}".format(print_name, opt_val, matching_val)
+
+    return matching_val[0]
 
 
 def _find_children(nodes, nodes_by_fullname, _headings, root_level, _start_id, _root_node, n_headings):
@@ -344,6 +429,10 @@ def str_to_tuple_multi(val):
     return tuple(out_list)
 
 
+def safer_arange(start, stop, step):
+    return step * np.arange(start / step, stop / step)
+
+
 def str_to_tuple(val):
     if val.startswith('range('):
         """standard (exclusive) range"""
@@ -383,7 +472,7 @@ def str_to_tuple(val):
                 _temp[1] += _step
             if not inclusive_start:
                 _temp[0] += _step
-            return tuple(np.arange(*_temp))
+            return tuple(safer_arange(*_temp))
         except BaseException as e:
             pass
     if any(k in val for k in ('(', '{', '[')):
@@ -408,6 +497,9 @@ def str_to_basic_type(_val):
     #     if _val_parsed == '__n__':
     #         _val_parsed = ''
     #     return _val_parsed
+
+    if not _val:
+        return _val
 
     """try parsing in decreasing order of specificity --> int, float, str"""
 
@@ -1125,6 +1217,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     :param int cfg_cache:
     :return:
     """
+
+    class_input = False
+    if inspect.isclass(obj):
+        class_input = True
+        obj = obj()
+
     arg_dict = {}
     if prog:
         arg_dict['prog'] = prog
@@ -1395,6 +1493,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _curr_sec_seq_id = _curr_sec_node.seq_id
                 _curr_sec_name = section_names[_sec_id]
 
+                assert _curr_sec_name == _curr_sec_node.name, "curr_sec_node name mismatch"
+
                 if _curr_sec_parent_seq_id not in valid_parent_seq_ids:
                     # if _sec_id in specific_sec_ids and specific_sec_ids[_sec_id] == 0:
                     #     raise AssertionError('Specific section {} not found'.format(_curr_sec_ancestral_path))
@@ -1483,134 +1583,62 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
                 _curr_sec_args = _file_args[_start_id:_end_id]
 
+                phs_sub = {
+                    ('%N%', '__name__',): _curr_sec_name,
+                    ('%P%', '__parent__',): _curr_sec_parent_name,
+                    ('%R%', '__root__',): _curr_sec_root_name,
+                    ('%F%', '__full__',): _curr_sec_full_name,
+                    ('%PF%', '__parent_full__',): _curr_sec_parent_full_name,
+                }
+
+                _curr_sec_sub_names = _curr_sec_name.split('_')
+                if len(_curr_sec_sub_names) > 1:
+                    for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
+                        phs_sub[(f'%N{sub_name_id}%', f'__name{sub_name_id}__',)] = sub_name
+
+                """
+                only replace these if the placeholder actually exists since the 
+                substitution might be invalid depending on the name and hierarchical position of the section
+                """
+                phs_sub_fn = {
+                    ('%GP%', '__g_parent__'): _curr_sec_node.gp,
+                    ('%GGP%', '__gg_parent__'): _curr_sec_node.ggp,
+
+                    ('%GF%', '__g_full__'): _curr_sec_node.gf,
+                    ('%GGF%', '__gg_full__'): _curr_sec_node.ggf,
+
+                    ('%RI%', '__ratio__'): _curr_sec_node.ri,
+                    ('%PRI%', '__parent_ratio__'): _curr_sec_node.pri,
+                    ('%GPRI%', '__g_parent_ratio__'): _curr_sec_node.gpri,
+                    ('%GGPRI%', '__gg_parent_ratio__'): _curr_sec_node.ggpri,
+
+                    ('%L%', '__list__'): _curr_sec_node.l_,
+                    ('%PL%', '__parent_list__'): _curr_sec_node.pl,
+                    ('%GPL%', '__g_parent_list__'): _curr_sec_node.gpl,
+                    ('%GGPL%', '__gg_parent_list__'): _curr_sec_node.ggpl,
+
+                    ('%LRI%', '__list_ratio__'): _curr_sec_node.lri,
+                    ('%PLRI%', '__parent_list_ratio__'): _curr_sec_node.plri,
+                    ('%GPLRI%', '__g_parent_list_ratio__'): _curr_sec_node.gplri,
+                    ('%GGPLRI%', '__gg_parent_list_ratio__'): _curr_sec_node.ggplri,
+
+                    ('%RA%', '__range__'): _curr_sec_node.ra,
+                    ('%PRA%', '__parent_range__'): _curr_sec_node.pra,
+                    ('%GPRA%', '__g_parent_range__'): _curr_sec_node.gpra,
+                    ('%GGPRA%', '__gg_parent_range__'): _curr_sec_node.ggpra,
+                }
+
                 for i, _curr_sec_arg in enumerate(_curr_sec_args):
-                    _curr_sec_args[i] = _curr_sec_args[i].replace('__name__', _curr_sec_name)
-                    _curr_sec_sub_names = _curr_sec_name.split('_')
-                    if len(_curr_sec_sub_names) > 1:
-                        for sub_name_id, sub_name in enumerate(_curr_sec_sub_names):
-                            _curr_sec_args[i] = _curr_sec_args[i].replace('__name{}__'.format(sub_name_id), sub_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace(
-                        '__parent__', _curr_sec_parent_name)
-                    if '__g_parent__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_parent__', _curr_sec_node.parent.parent.name)
-                    if '__gg_parent__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_parent__',
-                            _curr_sec_node.parent.parent.parent.name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace(
-                        '__root__', _curr_sec_root_name)
 
-                    _curr_sec_args[i] = _curr_sec_args[i].replace(
-                        '__full__', _curr_sec_full_name)
-                    _curr_sec_args[i] = _curr_sec_args[i].replace(
-                        '__parent_full__',
-                        _curr_sec_parent_full_name)
-                    if '__g_full__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_full__',
-                            '{}_{}_{}'.format(
-                                _curr_sec_node.name,
-                                _curr_sec_node.parent.name,
-                                _curr_sec_node.parent.parent.name,
-                            )
-                        )
-                    if '__gg_full__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_full__',
-                            '{}_{}_{}_{}'.format(
-                                _curr_sec_node.name,
-                                _curr_sec_node.parent.name,
-                                _curr_sec_node.parent.parent.name,
-                                _curr_sec_node.parent.parent.parent.name
-                            )
-                        )
+                    for phs, sub in phs_sub.items():
+                        for ph in phs:
+                            _curr_sec_args[i] = _curr_sec_args[i].replace(ph, sub)
 
-                    if '__ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__ratio__',
-                            str(float(_curr_sec_name) / 100.0))
-                    if '__parent_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__parent_ratio__',
-                            str(float(_curr_sec_parent_name) / 100.0))
-                    if '__g_parent_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_parent_ratio__',
-                            str(float(_curr_sec_node.parent.parent.name) / 100.0))
-                    if '__gg_parent_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_parent_ratio__',
-                            str(float(_curr_sec_node.parent.parent.parent.name) / 100.0))
-
-                    if '__list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__list__',
-                            ','.join(_curr_sec_name.split('_')))
-
-                    if '__parent_list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__parent_list__',
-                            ','.join(_curr_sec_parent_name.split('_')))
-
-                    if '__g_parent_list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_parent_list__',
-                            ','.join(_curr_sec_node.parent.parent.name.split('_')))
-
-                    if '__gg_parent_list__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_parent_list__',
-                            ','.join(_curr_sec_node.parent.parent.parent.name.split('_')))
-
-                    def name_to_list_ratio(_name):
-                        temp = _name.split('_')
-                        for k_id, k in enumerate(temp):
-                            if k.startswith('n'):
-                                k = k.replace('n', '-')
-                            k = str(float(k) / 100.0)
-                            temp[k_id] = k
-                        return ','.join(temp)
-
-                    if '__list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__list_ratio__',
-                            name_to_list_ratio(_curr_sec_name))
-
-                    if '__parent_list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__parent_list_ratio__',
-                            name_to_list_ratio(_curr_sec_parent_name))
-
-                    if '__g_parent_list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_parent_list_ratio__',
-                            name_to_list_ratio(_curr_sec_node.parent.parent.name))
-
-                    if '__gg_parent_list_ratio__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_parent_list_ratio__',
-                            name_to_list_ratio(_curr_sec_node.parent.parent.parent.name))
-
-                    if '__range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__range__',
-                            ':'.join(_curr_sec_name.split('_')))
-
-                    if '__parent_range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__parent_range__',
-                            ':'.join(_curr_sec_parent_name.split('_')))
-
-                    if '__g_parent_range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__g_parent_range__',
-                            ':'.join(_curr_sec_node.parent.parent.name.split('_')))
-
-                    if '__gg_parent_range__' in _curr_sec_args[i]:
-                        _curr_sec_args[i] = _curr_sec_args[i].replace(
-                            '__gg_parent_range__',
-                            ':'.join(_curr_sec_node.parent.parent.parent.name.split('_')))
+                    for phs, sub_fn in phs_sub_fn.items():
+                        for ph in phs:
+                            if ph not in _curr_sec_args[i]:
+                                continue
+                            _curr_sec_args[i] = _curr_sec_args[i].replace(ph, sub_fn())
 
                 _sec_args += _curr_sec_args
 
@@ -1803,6 +1831,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)
+
+    if class_input:
+        return obj
 
     return args_in
 
@@ -2067,10 +2098,7 @@ def from_parser(parser, class_name='Params', allow_none_default=True,
                 _param_type = type(_param.default)
 
             if _param_type in (list, tuple):
-                if _param_type is str:
-                    default_str = "['{}, ]'".format(_param.default)
-                else:
-                    default_str = '[{} ,]'.format(_param.default)
+                default_str = '[{} ,]'.format(_param.default)
             else:
                 if _param_type is str:
                     default_str = "'{}'".format(_param.default)
@@ -2126,18 +2154,58 @@ def from_parser(parser, class_name='Params', allow_none_default=True,
                 fid.write(out_text)
 
 
+def val_to_str(name, val, class_name, class_prefix, nested, **kwargs):
+    sub_class_txt = ''
+    if isinstance(val, list):
+        val_str = ''
+        for _idx, _val in enumerate(val):
+            _name = f'{name}{_idx}'
+            val_str_, sub_class_txt_ = val_to_str(_name, _val, class_name, class_prefix, nested, **kwargs)
+            if sub_class_txt_:
+                sub_class_txt += f'\n{sub_class_txt_}\n'
+
+            val_str += f'{val_str_},'
+
+        val_str = f'[{val_str}]'
+
+    elif isinstance(val, dict):
+        sub_class_name = name.title().replace('_', '')
+        class_prefix_ = f'{class_name}'
+        if class_prefix:
+            class_prefix_ = f'{class_prefix}.{class_prefix_}'
+
+        sub_class_txt = from_dict(val, class_name=sub_class_name, class_prefix=class_prefix_,
+                                  return_only=True,
+                                  nested=nested + 1,
+                                  add_cfg=False, **kwargs)
+        val_str = f'{class_prefix_}.{sub_class_name}()'
+    elif isinstance(val, str):
+        val_str = f"'{val}'"
+    else:
+        val_str = f'{val}'
+
+    return val_str, sub_class_txt
+
+
 def from_dict(param_dict, class_name='Params',
               add_cfg=True, add_help=True,
-              to_clipboard=False, sort_by_name=True):
+              return_only=False, to_clipboard=False,
+              sort_by_name=True, nested=0, class_prefix='', add_init=True):
     """
     convert a dictionary into a parameter class compatible with this module
-    writes the class code to a python source file named  <class_name>.py
+    supports nested dictionaries by creating a nested class for each
+    optionally writes the class code to a python source file named  <class_name>.py or copies it to the clipboard
 
     :param dict param_dict:
     :param str class_name:
     :param bool add_cfg:
     :param bool add_help:
+    :param bool return_only:
     :param bool to_clipboard:
+    :param bool sort_by_name:
+    :param int nested:
+    :param bool add_init:
+    :param str class_prefix:
     :return:
     """
 
@@ -2146,37 +2214,60 @@ def from_dict(param_dict, class_name='Params',
     if sort_by_name:
         all_params_names.sort()
 
-    header_text = 'class {}:\n'.format(class_name)
-    out_text = '\tdef __init__(self):\n'
+    if nested:
+        nesting_str = '\t' * nested
+    else:
+        nesting_str = ''
+
+    header_text = f'{nesting_str}class {class_name}:\n'
+    sub_class_txt = ''
+    out_text = ''
+    if add_init:
+        out_text += f'{nesting_str}\tdef __init__(self):\n'
     if add_cfg and 'cfg' not in all_params_names:
-        out_text += "\t\tself.cfg = ()\n"
+        if add_init:
+            out_text += f"{nesting_str}\t\tself.cfg = ()\n"
+        else:
+            out_text += f"{nesting_str}\t\tcfg = ()\n"
 
     # help_text = '\t\tself.help = {\n'
-    help_text = '\t"""\n'
+    help_text = f'{nesting_str}\t"""\n'
 
     # doc_text = '\t"""\n'
 
     for _name in all_params_names:
-        default = param_dict[_name]
+        default_val = param_dict[_name]
         _help = ''
 
-        if isinstance(default, str):
-            default_str = "'{}'".format(default)
-        else:
-            default_str = '{}'.format(default)
+        default_str, sub_class_txt_ = val_to_str(
+            name=_name,
+            val=default_val,
+            class_name=class_name,
+            class_prefix=class_prefix,
+            nested=nested,
+            add_help=add_help,
+            add_init=add_init,
+        )
+
+        if sub_class_txt_:
+            assert add_init, "nested classes do not work without __init__"
+            sub_class_txt += f'\n{sub_class_txt_}\n'
 
         var_name = _name.replace('-', '_').replace(' ', '_')
 
-        out_text += '\t\tself.{} = {}\n'.format(var_name, default_str)
+        if add_init:
+            out_text += f'{nesting_str}\t\tself.{var_name} = {default_str}\n'
+        else:
+            out_text += f'{nesting_str}\t\t{var_name} = {default_str}\n'
 
         # help_text += "\t\t\t'{}': '{}',\n".format(var_name, _help)
-        help_text += "\t:ivar {}: {}\n".format(var_name, _help)
-        help_text += "\t:type {}: {}\n\n".format(var_name, type(default).__name__)
+        help_text += f"{nesting_str}\t:ivar {var_name}: {_help}\n"
+        help_text += f"{nesting_str}\t:type {var_name}: {type(default_val).__name__}\n\n"
 
-        # doc_text += '\t:param {} {}: {}\n'.format(type(default).__name__, var_name, _help)
+        # doc_text += '\t:param {} {}: {}\n'.format(type(default_val).__name__, var_name, _help)
 
     # help_text += "\t\t}"
-    help_text += '\t"""\n'
+    help_text += f'{nesting_str}\t"""\n'
 
     # doc_text += '\t"""\n'
 
@@ -2187,8 +2278,11 @@ def from_dict(param_dict, class_name='Params',
     # if add_doc:
     #     out_text = doc_text + out_text
 
-    out_text = header_text + out_text
+    out_text = header_text + out_text + sub_class_txt
     # time_stamp = datetime.now().strftime("%y%m%d_%H%M%S")
+
+    if return_only:
+        return out_text
 
     if to_clipboard:
         try:
