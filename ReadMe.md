@@ -48,6 +48,8 @@ Assuming `pf=arg1.arg2`, following flavors of __@__ identifier usage are support
 
 Usage of the package is very simple and involves calling `paramparse.process` as demonstrated in [example/main.py](https://github.com/abhineet123/paramparse/blob/master/example/main.py).
 
+__More detailed usage examples are available in [Deep MDP](https://github.com/abhineet123/deep_mdp) for which this parser was originally designed.__
+
 It also provides three converter functions `from_parser`, `from_dict` and `from_function` that can create a parameter class compatible with this package from existing parameters in  `argparse.ArgumentParser` and `dict` formats or using a function's keyword arguments respectively.
 The generated class code is either writen to a python source file whose name can be specified as the second argument (defaults to `Params.py`) or copied to clipboard if `to_clipboard=1` is provided (requires [pyperclip](https://pypi.org/project/pyperclip/)).
 
@@ -120,10 +122,11 @@ Paramparse supports the following placeholders:
 | __placeholder__      | __replacement__ |
 | ----------- | ----------- | 
 |`%N%`/`__name__`      | name of the section      |
-|`%N<i>%`/`__name<i>__`      | `i`<sup>th</sup> component of the section name if that name is treated as being composed of underscore-separated components (`i` is 0-based) |
+|`%N<i>%`/`__name<i>__`      | `i`<sup>th</sup> component of the section name if that name is treated as being composed of underscore-separated components (`i` is 0-based and the enclosing `<>` is not part of the placeholder, e.g. with section name = `ab_cd_12_34` `%N0%`, `%N1%`, `%N2%` and `%N3%` respectively denote `ab`, `cd`, `12` and `34`) |
+|`%N<i>*%`/`__name<i>*__`      | all components of the section name starting with the `i`<sup>th</sup> component joined with underscores (`i` >= 1, e.g. with section name = `ab_cd_12_34`, `%N1*%` and`%N2*%` respectively  denote `cd_12_34` and `12_34`) |
 |`%P%`/`__parent__`      | name of the parent of the section      |
 |`%GP%`/`__g_parent__`      | name of the grandparent of the section      |
-|`%GGP`/`__gg_parent__`      | name of the great grandparent of the section      |
+|`%GGP%`/`__gg_parent__`      | name of the great grandparent of the section      |
 |`%R%`/`__root__`      | name of the root section of the section's hierarchy    |
 |`%F%`/`__full__`      | names of the section and its parent separated by an underscore    |
 |`%PF%`/`__parent_full__`      | names of the section's parent and its grand parent separated by an underscore    |
