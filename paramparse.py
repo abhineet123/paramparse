@@ -46,10 +46,12 @@ class CFG:
     :type cfg: str
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.cfg = ()
         self.cfg_root = 'cfg'
         self.cfg_ext = 'cfg'
+
+        self.__dict__.update(kwargs)
 
 
 class MultiString(str):

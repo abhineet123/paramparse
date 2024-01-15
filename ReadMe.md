@@ -48,7 +48,7 @@ Assuming `pf=arg1.arg2`, following flavors of __@__ identifier usage are support
 
 Usage of the package is very simple and involves calling `paramparse.process` as demonstrated in [example/main.py](https://github.com/abhineet123/paramparse/blob/master/example/main.py).
 
-__More detailed usage examples are available in [Deep MDP](https://github.com/abhineet123/deep_mdp) for which this parser was originally designed.__
+__More detailed usage examples are available in [Deep MDP](https://github.com/abhineet123/deep_mdp) for which this parser was originally designed.https://github.com/abhineet123/deep_mdp __
 
 It also provides three converter functions `from_parser`, `from_dict` and `from_function` that can create a parameter class compatible with this package from existing parameters in  `argparse.ArgumentParser` and `dict` formats or using a function's keyword arguments respectively.
 The generated class code is either writen to a python source file whose name can be specified as the second argument (defaults to `Params.py`) or copied to clipboard if `to_clipboard=1` is provided (requires [pyperclip](https://pypi.org/project/pyperclip/)).
