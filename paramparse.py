@@ -38,18 +38,26 @@ class CFG:
     :ivar cfg_ext: extension of the CFG files;
     this is automatically appended to the specified CFG files without any extension
     defaults to 'cfg' so that a file named cvat.cfg can be specified simply as cvat
-    :type cfg: str
+    :type cfg_ext: str
 
     :ivar cfg_root: path to the folder containing CFG files;
     defaults to 'cfg' where all CFG files would be expected to be in a sub folder named cfg in the
     current working directory
-    :type cfg: str
+    :type cfg_root: str
+
+    :ivar cfg_prefix: prefix to be added to the names of all the CFG file;
+    :type cfg_prefix: str
+
+    :ivar cfg_suffix: suffix to be added to the names of all the CFG file;
+    :type cfg_suffix: str
     """
 
     def __init__(self, **kwargs):
         self.cfg = ()
         self.cfg_root = 'cfg'
         self.cfg_ext = 'cfg'
+        self.cfg_prefix = ''
+        self.cfg_suffix = ''
 
         self.__dict__.update(kwargs)
 
@@ -1203,6 +1211,7 @@ def process_dict(params, *args, **kwargs):
 
 
 def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
+            cfg_prefix='', cfg_suffix='',
             prog='', usage='%(prog)s [options]', allow_unknown=0, cfg_cache=1,
             cmd_args=None, verbose=0):
     """
@@ -1213,6 +1222,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     :param str cfg:
     :param str cfg_root:
     :param str cfg_ext:
+    :param str cfg_prefix:
+    :param str cfg_suffix:
     :param str prog:
     :param str | None usage:
     :param int allow_unknown:
@@ -1273,6 +1284,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if not cfg_root:
             cfg_root = getattr(obj, 'cfg_root', cfg_root)
 
+        if not cfg_prefix:
+            cfg_prefix = getattr(obj, 'cfg_prefix', cfg_prefix)
+
+        if not cfg_suffix:
+            cfg_suffix = getattr(obj, 'cfg_suffix', cfg_suffix)
+
         if not cfg_ext:
             cfg_ext = getattr(obj, 'cfg_ext', cfg_ext)
 
@@ -1305,10 +1322,18 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             if _cfg.startswith('_') and _cfg.endswith('_'):
                 _cfg = _cfg.strip('_')
 
+            if cfg_prefix:
+                _cfg = f'{cfg_prefix}-{_cfg}'
+
+            if cfg_suffix:
+                _cfg = f'{_cfg}-{cfg_suffix}'
+
             if cfg_ext:
-                _cfg = '{}.{}'.format(_cfg, cfg_ext)
+                _cfg = f'{_cfg}.{cfg_ext}'
+
             if cfg_root:
                 _cfg = os.path.join(cfg_root, _cfg)
+
             if not os.path.isfile(_cfg):
                 if _cfg:
                     raise IOError('cfg file does not exist: {:s}'.format(os.path.abspath(_cfg)))
