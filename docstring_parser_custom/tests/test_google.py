@@ -49,17 +49,17 @@ def test_google_parser():
     assert docstring.long_description is None
     assert len(docstring.meta) == 6
     assert docstring.meta[0].args == ["desc"]
-    assert docstring.meta[0].description == "This is the description."
+    assert docstring.meta[0].json_desc == "This is the description."
     assert docstring.meta[1].args == ["param", "arg1"]
-    assert docstring.meta[1].description == "first arg"
+    assert docstring.meta[1].json_desc == "first arg"
     assert docstring.meta[2].args == ["param", "arg2"]
-    assert docstring.meta[2].description == "second arg"
+    assert docstring.meta[2].json_desc == "second arg"
     assert docstring.meta[3].args == ["attribute", "attr1"]
-    assert docstring.meta[3].description == "first attribute"
+    assert docstring.meta[3].json_desc == "first attribute"
     assert docstring.meta[4].args == ["attribute", "attr2"]
-    assert docstring.meta[4].description == "second attribute"
+    assert docstring.meta[4].json_desc == "second attribute"
     assert docstring.meta[5].args == ["examples"]
-    assert docstring.meta[5].description == "Many examples\nMore examples"
+    assert docstring.meta[5].json_desc == "Many examples\nMore examples"
 
     parser.add_section(Section("Note", "note", SectionType.SINGULAR))
     docstring = parser.parse(
@@ -93,7 +93,7 @@ def test_google_parser():
     )
     assert len(docstring.meta) == 1
     assert docstring.meta[0].args == ["note"]
-    assert docstring.meta[0].description == "a note"
+    assert docstring.meta[0].json_desc == "a note"
 
 
 @pytest.mark.parametrize(
@@ -301,7 +301,7 @@ def test_meta_with_multiline_description() -> None:
     assert len(docstring.meta) == 1
     assert docstring.meta[0].args == ["param", "spam"]
     assert docstring.meta[0].arg_name == "spam"
-    assert docstring.meta[0].description == "asd\n1\n    2\n3"
+    assert docstring.meta[0].json_desc == "asd\n1\n    2\n3"
 
 
 def test_default_args():
@@ -329,7 +329,7 @@ def test_default_args():
     assert arg4.is_optional
     assert arg4.type_name == "Optional[Dict[str, Any]]"
     assert arg4.default == "None"
-    assert arg4.description == "The fourth arg. Defaults to None."
+    assert arg4.json_desc == "The fourth arg. Defaults to None."
 
 
 def test_multiple_meta() -> None:
@@ -352,13 +352,13 @@ def test_multiple_meta() -> None:
     assert len(docstring.meta) == 3
     assert docstring.meta[0].args == ["param", "spam"]
     assert docstring.meta[0].arg_name == "spam"
-    assert docstring.meta[0].description == "asd\n1\n    2\n3"
+    assert docstring.meta[0].json_desc == "asd\n1\n    2\n3"
     assert docstring.meta[1].args == ["raises", "bla"]
     assert docstring.meta[1].type_name == "bla"
-    assert docstring.meta[1].description == "herp"
+    assert docstring.meta[1].json_desc == "herp"
     assert docstring.meta[2].args == ["raises", "yay"]
     assert docstring.meta[2].type_name == "yay"
-    assert docstring.meta[2].description == "derp"
+    assert docstring.meta[2].json_desc == "derp"
 
 
 def test_params() -> None:
@@ -379,19 +379,19 @@ def test_params() -> None:
     assert len(docstring.params) == 4
     assert docstring.params[0].arg_name == "name"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "description 1"
+    assert docstring.params[0].json_desc == "description 1"
     assert not docstring.params[0].is_optional
     assert docstring.params[1].arg_name == "priority"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "description 2"
+    assert docstring.params[1].json_desc == "description 2"
     assert not docstring.params[1].is_optional
     assert docstring.params[2].arg_name == "sender"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description == "description 3"
+    assert docstring.params[2].json_desc == "description 3"
     assert docstring.params[2].is_optional
     assert docstring.params[3].arg_name == "ratio"
     assert docstring.params[3].type_name == "Optional[float]"
-    assert docstring.params[3].description == "description 4"
+    assert docstring.params[3].json_desc == "description 4"
     assert docstring.params[3].is_optional
 
     docstring = parse(
@@ -407,12 +407,12 @@ def test_params() -> None:
     assert len(docstring.params) == 2
     assert docstring.params[0].arg_name == "name"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == (
+    assert docstring.params[0].json_desc == (
         "description 1\n" "with multi-line text"
     )
     assert docstring.params[1].arg_name == "priority"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "description 2"
+    assert docstring.params[1].json_desc == "description 2"
 
 
 def test_attributes() -> None:
@@ -433,19 +433,19 @@ def test_attributes() -> None:
     assert len(docstring.params) == 4
     assert docstring.params[0].arg_name == "name"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "description 1"
+    assert docstring.params[0].json_desc == "description 1"
     assert not docstring.params[0].is_optional
     assert docstring.params[1].arg_name == "priority"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "description 2"
+    assert docstring.params[1].json_desc == "description 2"
     assert not docstring.params[1].is_optional
     assert docstring.params[2].arg_name == "sender"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description == "description 3"
+    assert docstring.params[2].json_desc == "description 3"
     assert docstring.params[2].is_optional
     assert docstring.params[3].arg_name == "ratio"
     assert docstring.params[3].type_name == "Optional[float]"
-    assert docstring.params[3].description == "description 4"
+    assert docstring.params[3].json_desc == "description 4"
     assert docstring.params[3].is_optional
 
     docstring = parse(
@@ -461,12 +461,12 @@ def test_attributes() -> None:
     assert len(docstring.params) == 2
     assert docstring.params[0].arg_name == "name"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == (
+    assert docstring.params[0].json_desc == (
         "description 1\n" "with multi-line text"
     )
     assert docstring.params[1].arg_name == "priority"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "description 2"
+    assert docstring.params[1].json_desc == "description 2"
 
 
 def test_returns() -> None:
@@ -486,7 +486,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name is None
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
 
     docstring = parse(
         """
@@ -497,7 +497,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name is None
-    assert docstring.returns.description == "description with: a colon!"
+    assert docstring.returns.json_desc == "description with: a colon!"
 
     docstring = parse(
         """
@@ -508,7 +508,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "int"
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
 
     docstring = parse(
         """
@@ -518,7 +518,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "Optional[Mapping[str, List[int]]]"
-    assert docstring.returns.description == "A description: with a colon"
+    assert docstring.returns.json_desc == "A description: with a colon"
 
     docstring = parse(
         """
@@ -529,7 +529,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "int"
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
 
     docstring = parse(
         """
@@ -543,7 +543,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "int"
-    assert docstring.returns.description == (
+    assert docstring.returns.json_desc == (
         "description\n" "with much text\n\n" "even some spacing"
     )
 
@@ -565,7 +565,7 @@ def test_raises() -> None:
     )
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name == "ValueError"
-    assert docstring.raises[0].description == "description"
+    assert docstring.raises[0].json_desc == "description"
 
 
 def test_examples() -> None:
@@ -581,8 +581,8 @@ def test_examples() -> None:
         """
     )
     assert len(docstring.meta) == 2
-    assert docstring.meta[0].description == "example: 1"
-    assert docstring.meta[1].description == "long example\n\nmore here"
+    assert docstring.meta[0].json_desc == "example: 1"
+    assert docstring.meta[1].json_desc == "long example\n\nmore here"
 
 
 def test_broken_meta() -> None:

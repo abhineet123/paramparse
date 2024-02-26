@@ -988,9 +988,38 @@ def _process_args_from_parser(obj, args, member_to_type):
         _assign_arg(obj, key_parts, 0, val, member_to_type, '')
 
 
-def read_cfg(_cfg, enable_cache=1):
-    if not _cfg:
-        return
+def recursive_read(cfg, imported_cfgs=(), level=0):
+    indent = '\t' * level
+    print(f'{indent}Reading parameters from {cfg:s}')
+    file_args = [k.strip() for k in open(cfg, 'r').readlines()]
+
+    cfg_dir = os.path.dirname(cfg)
+
+    out_file_args = []
+    out_imported_cfgs = [cfg, ]
+
+    for file_arg_id, file_arg in enumerate(file_args):
+        if file_arg.startswith('%import% '):
+            _, imported_cfg_name = file_arg.split(' ')
+            imported_cfg = os.path.join(cfg_dir, imported_cfg_name)
+            prev_imported_cfgs = tuple(set(imported_cfgs + tuple(out_imported_cfgs)))
+
+            assert imported_cfg not in prev_imported_cfgs, f"circular CFG import found in {cfg}: {imported_cfg}"
+
+            out_imported_cfgs.append(imported_cfg)
+            imported_file_args, imported_cfgs = recursive_read(
+                imported_cfg, imported_cfgs=tuple(out_imported_cfgs), level=level + 1)
+            out_file_args += imported_file_args
+            out_imported_cfgs += imported_cfgs
+        else:
+            out_file_args.append(file_arg)
+
+    out_imported_cfgs = tuple(set(out_imported_cfgs))
+
+    return out_file_args, out_imported_cfgs
+
+
+def get_cfg_cache_path(_cfg):
     _cfg_dir = os.path.dirname(_cfg)
     _cfg_name = os.path.basename(_cfg)
 
@@ -999,31 +1028,55 @@ def read_cfg(_cfg, enable_cache=1):
 
     cfg_cache_path = os.path.join(_cfg_cache_dir, _cfg_name + '.cache')
 
-    if enable_cache and os.path.exists(cfg_cache_path):
-        cfg_cache_mtime = os.path.getmtime(cfg_cache_path)
-        cfg_mtime = os.path.getmtime(_cfg)
+    return cfg_cache_path
 
-        # print('cfg_mtime: {}'.format(cfg_mtime))
-        # print('cfg_cache_mtime: {}'.format(cfg_cache_mtime))
 
-        if cfg_mtime <= cfg_cache_mtime:
-            try:
-                print('Loading cfg data from {:s}'.format(cfg_cache_path))
-                with open(cfg_cache_path, 'rb') as f:
-                    nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name = pickle.load(f)
-            except:
-                pass
-            else:
-                return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+def load_cfg_cache(_cfg):
+    cfg_cache_path = get_cfg_cache_path(_cfg)
 
-        # cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
-        # cfg_mtime_local = time.ctime(cfg_mtime)
-        # print('cfg_cache_mtime_local: {}'.format(cfg_cache_mtime_local))
-        # print('cfg_mtime_local: {}'.format(cfg_mtime_local))
+    if not os.path.exists(cfg_cache_path):
+        return None
 
-    print('Reading parameters from {:s}'.format(_cfg))
-    file_args = [k.strip() for k in open(_cfg, 'r').readlines()]
+    cfg_cache_mtime = os.path.getmtime(cfg_cache_path)
+    cfg_mtime = os.path.getmtime(_cfg)
+
+    if cfg_mtime > cfg_cache_mtime:
+        return None
+
+    try:
+        print('Loading cfg data from {:s}'.format(cfg_cache_path))
+        with open(cfg_cache_path, 'rb') as f:
+            cache_data = pickle.load(f)
+        nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name, imported_cfgs = cache_data
+    except BaseException as e:
+        print(f'failed to load cfg data from cache: {e}')
+        return None
+    else:
+        for imported_cfg in imported_cfgs:
+            imported_cfg_mtime = os.path.getmtime(imported_cfg)
+            if imported_cfg_mtime > cfg_cache_mtime:
+                return None
+
+        return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
+
+    # cfg_cache_mtime_local = time.ctime(cfg_cache_mtime)
+    # cfg_mtime_local = time.ctime(cfg_mtime)
+    # print('cfg_cache_mtime_local: {}'.format(cfg_cache_mtime_local))
+    # print('cfg_mtime_local: {}'.format(cfg_mtime_local))
+
+
+def read_cfg(_cfg, enable_cache=1):
+    if not _cfg:
+        return
+
+    if enable_cache:
+        cfg_cache = load_cfg_cache(_cfg)
+        if cfg_cache is not None:
+            return cfg_cache
+
     file_args_offset = 0
+
+    file_args, imported_cfgs = recursive_read(_cfg)
 
     if not file_args[0].startswith('##'):
         file_args.insert(0, '##')
@@ -1185,8 +1238,10 @@ def read_cfg(_cfg, enable_cache=1):
     nodes_by_fullname = dict(nodes_by_fullname)
 
     if enable_cache:
+        cfg_cache_path = get_cfg_cache_path(_cfg)
         with open(cfg_cache_path, 'wb') as f:  # Python 3: open(..., 'wb')
-            pickle.dump([nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name], f)
+            pickle.dump([nodes, nodes_by_fullname, _sections,
+                         file_args, file_args_offset, root_sec_name, imported_cfgs], f)
 
     return nodes, nodes_by_fullname, _sections, file_args, file_args_offset, root_sec_name
 
@@ -1317,8 +1372,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             _cfg_sec = [k for k in list(_cfg[1:]) if k]
             _cfg = _cfg[0]
 
-            """optional leading and trailing for better visible discrimination between cfg files and sections 
-            in commands stored in syntax highlighted markdown files"""
+            """optional leading and trailing underscores for better visible discrimination between cfg files and 
+            sections 
+            in commands stored in syntax-highlighted markdown files"""
             if _cfg.startswith('_') and _cfg.endswith('_'):
                 _cfg = _cfg.strip('_')
 

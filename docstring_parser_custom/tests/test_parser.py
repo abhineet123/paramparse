@@ -28,19 +28,19 @@ def test_rest() -> None:
     assert len(docstring.params) == 3
     assert docstring.params[0].arg_name == "spam"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "spam desc"
+    assert docstring.params[0].json_desc == "spam desc"
     assert docstring.params[1].arg_name == "bla"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "bla desc"
+    assert docstring.params[1].json_desc == "bla desc"
     assert docstring.params[2].arg_name == "yay"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description == ""
+    assert docstring.params[2].json_desc == ""
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name == "ValueError"
-    assert docstring.raises[0].description == "exc desc"
+    assert docstring.raises[0].json_desc == "exc desc"
     assert docstring.returns is not None
     assert docstring.returns.type_name == "tuple"
-    assert docstring.returns.description == "ret desc"
+    assert docstring.returns.json_desc == "ret desc"
 
 
 def test_google() -> None:
@@ -74,19 +74,19 @@ def test_google() -> None:
     assert len(docstring.params) == 3
     assert docstring.params[0].arg_name == "spam"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "spam desc"
+    assert docstring.params[0].json_desc == "spam desc"
     assert docstring.params[1].arg_name == "bla"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "bla desc"
+    assert docstring.params[1].json_desc == "bla desc"
     assert docstring.params[2].arg_name == "yay"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description == ""
+    assert docstring.params[2].json_desc == ""
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name == "ValueError"
-    assert docstring.raises[0].description == "exc desc"
+    assert docstring.raises[0].json_desc == "exc desc"
     assert docstring.returns is not None
     assert docstring.returns.type_name == "tuple"
-    assert docstring.returns.description == "ret desc"
+    assert docstring.returns.json_desc == "ret desc"
 
 
 def test_numpydoc() -> None:
@@ -142,21 +142,21 @@ def test_numpydoc() -> None:
     assert len(docstring.params) == 4
     assert docstring.params[0].arg_name == "spam"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "spam desc"
+    assert docstring.params[0].json_desc == "spam desc"
     assert docstring.params[1].arg_name == "bla"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "bla desc"
+    assert docstring.params[1].json_desc == "bla desc"
     assert docstring.params[2].arg_name == "yay"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description is None
+    assert docstring.params[2].json_desc is None
     assert docstring.params[3].arg_name == "this_guy"
     assert docstring.params[3].type_name == "int"
     assert docstring.params[3].is_optional
-    assert docstring.params[3].description == "you know him"
+    assert docstring.params[3].json_desc == "you know him"
 
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name == "ValueError"
-    assert docstring.raises[0].description == "exc desc"
+    assert docstring.raises[0].json_desc == "exc desc"
     assert docstring.returns is not None
     assert docstring.returns.type_name == "tuple"
-    assert docstring.returns.description == "ret desc"
+    assert docstring.returns.json_desc == "ret desc"

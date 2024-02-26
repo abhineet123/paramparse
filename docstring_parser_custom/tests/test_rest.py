@@ -202,7 +202,7 @@ def test_meta_with_multiline_description() -> None:
     assert docstring.short_description == "Short description"
     assert len(docstring.meta) == 1
     assert docstring.meta[0].args == ["meta"]
-    assert docstring.meta[0].description == "asd\n1\n    2\n3"
+    assert docstring.meta[0].json_desc == "asd\n1\n    2\n3"
 
 
 def test_multiple_meta() -> None:
@@ -221,11 +221,11 @@ def test_multiple_meta() -> None:
     assert docstring.short_description == "Short description"
     assert len(docstring.meta) == 3
     assert docstring.meta[0].args == ["meta1"]
-    assert docstring.meta[0].description == "asd\n1\n    2\n3"
+    assert docstring.meta[0].json_desc == "asd\n1\n    2\n3"
     assert docstring.meta[1].args == ["meta2"]
-    assert docstring.meta[1].description == "herp"
+    assert docstring.meta[1].json_desc == "herp"
     assert docstring.meta[2].args == ["meta3"]
-    assert docstring.meta[2].description == "derp"
+    assert docstring.meta[2].json_desc == "derp"
 
 
 def test_meta_with_args() -> None:
@@ -239,7 +239,7 @@ def test_meta_with_args() -> None:
     assert docstring.short_description == "Short description"
     assert len(docstring.meta) == 1
     assert docstring.meta[0].args == ["meta", "ene", "due", "rabe"]
-    assert docstring.meta[0].description == "asd"
+    assert docstring.meta[0].json_desc == "asd"
 
 
 def test_params() -> None:
@@ -261,30 +261,30 @@ def test_params() -> None:
     assert len(docstring.params) == 5
     assert docstring.params[0].arg_name == "name"
     assert docstring.params[0].type_name is None
-    assert docstring.params[0].description == "description 1"
+    assert docstring.params[0].json_desc == "description 1"
     assert docstring.params[0].default is None
     assert not docstring.params[0].is_optional
     assert docstring.params[1].arg_name == "priority"
     assert docstring.params[1].type_name == "int"
-    assert docstring.params[1].description == "description 2"
+    assert docstring.params[1].json_desc == "description 2"
     assert not docstring.params[1].is_optional
     assert docstring.params[1].default is None
     assert docstring.params[2].arg_name == "sender"
     assert docstring.params[2].type_name == "str"
-    assert docstring.params[2].description == "description 3"
+    assert docstring.params[2].json_desc == "description 3"
     assert docstring.params[2].is_optional
     assert docstring.params[2].default is None
     assert docstring.params[3].arg_name == "message"
     assert docstring.params[3].type_name == "str"
     assert (
-        docstring.params[3].description == "description 4, defaults to 'hello'"
+            docstring.params[3].json_desc == "description 4, defaults to 'hello'"
     )
     assert docstring.params[3].is_optional
     assert docstring.params[3].default == "'hello'"
     assert docstring.params[4].arg_name == "multiline"
     assert docstring.params[4].type_name == "str"
     assert (
-            docstring.params[4].description == "long description 5,\ndefaults to 'bye'"
+            docstring.params[4].json_desc == "long description 5,\ndefaults to 'bye'"
     )
     assert docstring.params[4].is_optional
     assert docstring.params[4].default == "'bye'"
@@ -306,7 +306,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name is None
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
     assert not docstring.returns.is_generator
 
     docstring = parse(
@@ -317,7 +317,7 @@ def test_returns() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "int"
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
     assert not docstring.returns.is_generator
 
 
@@ -337,7 +337,7 @@ def test_yields() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name is None
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
     assert docstring.returns.is_generator
 
     docstring = parse(
@@ -348,7 +348,7 @@ def test_yields() -> None:
     )
     assert docstring.returns is not None
     assert docstring.returns.type_name == "int"
-    assert docstring.returns.description == "description"
+    assert docstring.returns.json_desc == "description"
     assert docstring.returns.is_generator
 
 
@@ -368,7 +368,7 @@ def test_raises() -> None:
     )
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name is None
-    assert docstring.raises[0].description == "description"
+    assert docstring.raises[0].json_desc == "description"
 
     docstring = parse(
         """
@@ -378,7 +378,7 @@ def test_raises() -> None:
     )
     assert len(docstring.raises) == 1
     assert docstring.raises[0].type_name == "ValueError"
-    assert docstring.raises[0].description == "description"
+    assert docstring.raises[0].json_desc == "description"
 
 
 def test_broken_meta() -> None:
