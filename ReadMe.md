@@ -3,6 +3,7 @@
 <!-- MarkdownTOC -->
 
 - [Introduction](#introductio_n_)
+- [Imports](#imports_)
 - [Sections](#section_s_)
     - [Hierarchical nesting](#hierarchical_nestin_g_)
     - [Replication](#replication_)
@@ -64,10 +65,22 @@ Run `python3 main.py --h` from the example folder to see the hierarchical help d
 
 Apart from the hierarchical nesting and parameter grouping, an important utility of `paramparse` is in the class based representation that allows automated code analysis, navigation and refactoring in IDEs like Pycharm that is not possible when using vanilla `argparse.ArgumentParser` or `dict`.
 
+<a id="imports_"></a>
+# Imports
+A cfg can be imported from within another using the `%import%` keyword followed by the relative path of that cfg with respect to the importing cfg. 
+
+For example, the line
+```
+%import% dir3/imported.cfg
+```
+in `dir1/dir2/importing.cfg` will import `dir1/dir2/dir3/imported.cfg`.
+
+Importing a CFG is equivalent to copying and pasting all the lines from the imported CFG into the importing CFG at the place where the `%import%` line is.
+
+Recursive imports are supported and circular imports will raise an assertion error.
 
 <a id="section_s_"></a>
 # Sections
-
 Sections provide a means to read a cfg file selectively rather than in its entirety.    
 Each section is a named group of consecutive lines within a cfg file that is preceded and succeeded by a line starting with two or more `#`:
 - preceding line specifies the name of the section
