@@ -1324,6 +1324,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
         if cmd_args is None:
             cmd_args = sys.argv[1:]
 
+            if cmd_args[0].startswith('python') and '=' not in cmd_args[0]:
+                cmd_args = cmd_args[1:]
+            if '=' not in cmd_args[0]:
+                cmd_args = cmd_args[1:]
+
         argv_id = 0
 
         if not cfg:
