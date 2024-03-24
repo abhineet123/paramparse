@@ -1301,6 +1301,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     if hasattr(obj, 'help') and '__desc__' in obj.help:
         arg_dict['description'] = obj.help['__desc__']
 
+    arg_dict['formatter_class'] = argparse.RawTextHelpFormatter
+
     parser = argparse.ArgumentParser(**arg_dict)
     member_to_type = {}
     doc_dict = {}
