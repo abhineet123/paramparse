@@ -501,6 +501,10 @@ def str_to_tuple(val):
         return arg_vals_parsed
 
 
+def linux_path(*args, **kwargs):
+    return os.path.join(*args, **kwargs).replace(os.sep, '/')
+
+
 def str_to_basic_type(_val):
     # if _type == str:
     #     _val_parsed = _val
@@ -569,12 +573,12 @@ def copy_recursive(src, dst=None, include_protected=1):
 
 
 def save(obj, dir_name, out_name='params.bin'):
-    save_path = os.path.join(dir_name, out_name)
+    save_path = linux_path(dir_name, out_name)
     pickle.dump(obj, open(save_path, "wb"))
 
 
 def load(obj, dir_name, prefix='', out_name='params.bin'):
-    load_path = os.path.join(dir_name, out_name)
+    load_path = linux_path(dir_name, out_name)
     params = pickle.load(open(load_path, "rb"))
     missing_params = []
     _recursive_load(obj, params, prefix, missing_params)
@@ -583,13 +587,13 @@ def load(obj, dir_name, prefix='', out_name='params.bin'):
 
 
 def write(obj, dir_name, prefix='', out_name='params.cfg'):
-    save_path = os.path.join(dir_name, out_name)
+    save_path = linux_path(dir_name, out_name)
     save_fid = open(save_path, "w")
     _recursive_write(obj, prefix, save_fid)
 
 
 def read(obj, dir_name, prefix='', out_name='params.cfg', allow_unknown=0):
-    load_path = os.path.join(dir_name, out_name)
+    load_path = linux_path(dir_name, out_name)
     lines = open(load_path, "r").readlines()
     if prefix:
         lines = [k.replace(prefix + '.', '') for k in lines if k.startswith(prefix + '.')]
@@ -1001,7 +1005,7 @@ def recursive_read(cfg, imported_cfgs=(), level=0):
     for file_arg_id, file_arg in enumerate(file_args):
         if file_arg.startswith('%import% '):
             _, imported_cfg_name = file_arg.split(' ')
-            imported_cfg = os.path.join(cfg_dir, imported_cfg_name)
+            imported_cfg = linux_path(cfg_dir, imported_cfg_name)
             prev_imported_cfgs = tuple(set(imported_cfgs + tuple(out_imported_cfgs)))
 
             assert imported_cfg not in prev_imported_cfgs, f"circular CFG import found in {cfg}: {imported_cfg}"
@@ -1023,10 +1027,10 @@ def get_cfg_cache_path(_cfg):
     _cfg_dir = os.path.dirname(_cfg)
     _cfg_name = os.path.basename(_cfg)
 
-    _cfg_cache_dir = os.path.join(_cfg_dir, '.cache')
+    _cfg_cache_dir = linux_path(_cfg_dir, '.cache')
     os.makedirs(_cfg_cache_dir, exist_ok=True)
 
-    cfg_cache_path = os.path.join(_cfg_cache_dir, _cfg_name + '.cache')
+    cfg_cache_path = linux_path(_cfg_cache_dir, _cfg_name + '.cache')
 
     return cfg_cache_path
 
@@ -1395,11 +1399,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = f'{_cfg}.{cfg_ext}'
 
             if cfg_root:
-                _cfg = os.path.join(cfg_root, _cfg)
+                _cfg = linux_path(cfg_root, _cfg)
 
             if not os.path.isfile(_cfg):
                 if _cfg:
-                    raise IOError('cfg file does not exist: {:s}'.format(os.path.abspath(_cfg)))
+                    raise IOError('cfg file does not exist: {:s}'.format(linux_path(os.path.abspath(_cfg))))
             repeated_cfgs = []
 
             repeated_sec_ids = [__sec_id for __sec_id, __sec in enumerate(_cfg_sec) if '+' in __sec]
@@ -2102,7 +2106,7 @@ def from_flags(flags, class_name='Params', allow_none_default=True,
     else:
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
         out_fname = '{}.py'.format(class_name_snake_case)
-        out_path = os.path.abspath(out_fname)
+        out_path = linux_path(os.path.abspath(out_fname))
         if os.path.exists(out_path):
             print('output path already exists so not writing to it: {}'.format(out_path))
         else:
@@ -2238,7 +2242,7 @@ def from_parser(parser, class_name='Params', allow_none_default=True,
     else:
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
         out_fname = '{}.py'.format(class_name_snake_case)
-        out_path = os.path.abspath(out_fname)
+        out_path = linux_path(os.path.abspath(out_fname))
         if os.path.exists(out_path):
             print('output path already exists so not writing to it: {}'.format(out_path))
         else:
@@ -2391,7 +2395,7 @@ def from_dict(param_dict, class_name='Params',
     else:
         class_name_snake_case = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
         out_fname = '{}.py'.format(class_name_snake_case)
-        out_path = os.path.abspath(out_fname)
+        out_path = linux_path(os.path.abspath(out_fname))
 
         if os.path.exists(out_path):
             print('output path already exists so not writing to it: {}'.format(out_path))
