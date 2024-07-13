@@ -1,3 +1,4 @@
+import copy
 import sys
 import os
 import re
@@ -25,6 +26,18 @@ import docstring_parser_custom
 #     import docstring_parser_custom
 # except:
 #     docstring_parser_custom = None
+
+class RegexDict(dict):
+
+    def __init__(self, _dict):
+        super(RegexDict, self).__init__(_dict)
+
+    def __getitem__(self, item):
+        for k, v in self.items():
+            if re.match(k, item):
+                return v
+        raise KeyError
+
 
 class CFG:
     """
@@ -201,6 +214,24 @@ class Node:
             self.is_root = False
             self.full_name = parent.name + self.name
             parent.children.append(self)
+
+    def copy(self, **kwargs):
+        new_node = Node(
+            heading_text=self.name,
+            parent=self.parent,
+            orig_text=self.orig_text,
+            parent_text=self.parent_text,
+            line_id=self.line_id,
+            end_id=self.end_id,
+            seq_id=self.seq_id,
+            curr_level=self.curr_level,
+            template_id=self.template_id,
+        )
+
+        for _arg, _val in kwargs.items():
+            setattr(new_node, _arg, _val)
+
+        return new_node
 
     def get_descendants(self):
         descendants = []
@@ -1085,7 +1116,7 @@ def read_cfg(_cfg, enable_cache=1):
     if not file_args[0].startswith('##'):
         file_args.insert(0, '##')
         file_args_offset = 1
-    _sections = [(k.lstrip('#').strip(), i, k.count('#') - 1, 0)
+    _sections = [[k.lstrip('#').strip(), i, k.count('#') - 1, 0]
                  for i, k in enumerate(file_args) if k.startswith('##')]
 
     n_file_args = len(file_args)
@@ -1096,13 +1127,13 @@ def read_cfg(_cfg, enable_cache=1):
     # _sections = [(k[0].rstrip(' __'), k[1], k[2], k[3]) if k[1] in _parent_specific_section_ids else k
     #              for k in _sections]
 
-    _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
+    _sections = [k if k[0] else ['__common__', k[1], k[2], k[3]] for k in _sections]
 
     """common sections"""
-    _sections = [k if k[0] else ('__common__', k[1], k[2], k[3]) for k in _sections]
+    _sections = [k if k[0] else ['__common__', k[1], k[2], k[3]] for k in _sections]
 
     """add section end IDs as the start IDs of the next section"""
-    _sections = [(k[0], k[1], _sections[i + 1][1] if i < n_sections - 1 else n_file_args, k[2], k[3])
+    _sections = [[k[0], k[1], _sections[i + 1][1] if i < n_sections - 1 else n_file_args, k[2], k[3]]
                  for i, k in enumerate(_sections)]
 
     # """default sections
@@ -1210,10 +1241,10 @@ def read_cfg(_cfg, enable_cache=1):
                 #         'irange(') or ',' in __sec_name
 
                 for k_id, k in enumerate(_templ_sec_names):
-                    _temp_sections.append((k, _sec[1], _sec[2], _sec[3], _curr_template_id))
+                    _temp_sections.append([k, _sec[1], _sec[2], _sec[3], _curr_template_id])
                     for descendant in descendants:  # type: Node
                         _temp_sections.append(
-                            (descendant.name, descendant.line_id, descendant.end_id, descendant.curr_level, 0))
+                            [descendant.name, descendant.line_id, descendant.end_id, descendant.curr_level, 0])
                         descendant.added = 1
                         # if k_id == 0:
                         #     # assert not is_template(descendant.name), \
@@ -1221,7 +1252,7 @@ def read_cfg(_cfg, enable_cache=1):
                         #     #         f"another: {_sec_name}"
                         #     _added_sections[(descendant.line_id, descendant.curr_level)] = 1
             else:
-                _temp_sections += [(k, _sec[1], _sec[2], _sec[3], _curr_template_id) for k in _templ_sec_names]
+                _temp_sections += [[k, _sec[1], _sec[2], _sec[3], _curr_template_id] for k in _templ_sec_names]
             _curr_template_id += 1
 
         if not found_new_sections:
@@ -1312,7 +1343,8 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
     doc_dict = {}
     _add_params_to_parser(parser, obj, member_to_type, doc_dict, verbose=verbose)
 
-    obj_doc_dict = doc_dict[type(obj)]
+    obj_type = type(obj)
+    obj_doc_dict = doc_dict[obj_type]
 
     try:
         short_description, long_description = obj_doc_dict['__description__']
@@ -1377,15 +1409,14 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                 _cfg = '{}:__common__'.format(_cfg)
 
             """alternate specification for parent specific sections for ease of selecting child section"""
-            _cfg = _cfg.replace('-', '')
+            # _cfg = _cfg.replace('-', '')
 
             _cfg = _cfg.split(':')
             _cfg_sec = [k for k in list(_cfg[1:]) if k]
             _cfg = _cfg[0]
 
-            """optional leading and trailing underscores for better visible discrimination between cfg files and 
-            sections 
-            in commands stored in syntax-highlighted markdown files"""
+            """optional leading and trailing underscores for better visible discrimination between
+             cfg files and sections in commands stored in syntax-highlighted markdown files"""
             if _cfg.startswith('_') and _cfg.endswith('_'):
                 _cfg = _cfg.strip('_')
 
@@ -1466,13 +1497,18 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
 
             nodes, nodes_by_fullname, _sections, _file_args, file_args_offset, root_sec_name = prev_cfg_data
 
+            # _re_sections = RegexDict({
+            #     __sec[0]: (nodes[__sec_id], __sec) for __sec_id, __sec in enumerate(_sections) if '*' in __sec[0]
+            # })
+
             n_file_args = len(_file_args)
 
             """remove excluded sections"""
             excluded_cfg_sec = [_sec.lstrip('!') for _sec in _cfg_sec if _sec.startswith('!')]
-            section_names, section_line_ids, section_end_ids, section_seq_ids, section_template_ids = zip(
-                *[(_sec[0], _sec[1], _sec[2], i, _sec[4]) for i, _sec in enumerate(_sections)
-                  if _sec not in excluded_cfg_sec])
+            section_names, section_line_ids, section_end_ids, section_seq_ids, section_template_ids = map(
+                list, zip(
+                    *[(_sec[0], _sec[1], _sec[2], i, _sec[4]) for i, _sec in enumerate(_sections)
+                      if _sec not in excluded_cfg_sec]))
 
             if excluded_cfg_sec:
                 print('Excluding section(s):\n{}'.format(pformat(excluded_cfg_sec)))
@@ -1496,11 +1532,40 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             # _node_matches = {( _id, _sec) : nodes[k] for _id, _sec in invalid_sec for k in nodes
             #                  if nodes[k].full_name == _sec}
             for _id, _sec in invalid_sec:
+                _sec_full = _sec.replace('-', '')
                 try:
-                    _node_matches = nodes_by_fullname[_sec]  # type: list
+                    _node_matches = nodes_by_fullname[_sec_full]  # type: list
                 except KeyError:
-                    raise AssertionError('Section {} not found in {}'.format(
-                        _sec, _cfg))
+                    # raise AssertionError('Section {} not found in {}'.format(
+                    #     _sec, _cfg))
+                    try:
+                        _orig_sec, _subs_sec = _sec.split('-', maxsplit=1)
+                        _orig_sec_full = f'__sub__{_orig_sec}'
+                        _node_matches = nodes_by_fullname[_orig_sec_full]  # type: list
+
+                        assert len(_node_matches) == 1, f"multiple substitution sections found for {_sec}"
+
+                        matched_node_ = _node_matches[0]
+                        seq_id = matched_node_.seq_id
+
+                        matched_sec_ = _sections[seq_id]
+
+                        assert matched_sec_[0] == matched_node_.name, "substitution section name mismatch"
+                        assert section_names[seq_id] == matched_node_.name, "substitution section name mismatch"
+
+                        matched_node_.name = matched_sec_[0] = section_names[seq_id] = _subs_sec
+
+                        # _sections[_node_matches[0].seq_id] = tuple(matched_sec_)
+
+                        # matched_node_, matched_sec_ = _re_sections[_sec_full]  # type: Node, list
+                        # new_node_ = matched_node_.copy(name=_child_sec, seq_id=len(_sections))
+                        # new_sec_ = list(matched_sec_).copy()
+                        # new_sec_[0] = _child_sec
+                        # _sections.append(tuple(new_sec_))
+                        # _node_matches = [new_node_, ]
+                        print()
+                    except KeyError:
+                        raise AssertionError(f'Section {_sec} not found in {_cfg}')
 
                 # curr_specific_sec = []
                 for _node in _node_matches:  # type:Node
@@ -1509,8 +1574,9 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     specific_sec.append((_node.seq_id, _node.name))
                     specific_sec_ids[_node.seq_id] = 0
 
-                    specific_sec.append((parent.seq_id, parent.name))
-                    specific_sec_ids[parent.seq_id] = 1
+                    if parent.seq_id is not None:
+                        specific_sec.append((parent.seq_id, parent.name))
+                        specific_sec_ids[parent.seq_id] = 1
 
                     # if _node.parent.template_id:
                     #     shared_parents = template_nodes[_node.parent.template_id]
