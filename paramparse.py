@@ -1540,6 +1540,12 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     #     _sec, _cfg))
                     try:
                         _orig_sec, _subs_sec = _sec.split('-', maxsplit=1)
+
+                        """optional leading and trailing double underscores for better visible 
+                        discrimination between substitution and ordinary sections in commands 
+                        stored in syntax-highlighted markdown files"""
+                        if _subs_sec.startswith('__') and _subs_sec.endswith('__'):
+                            _subs_sec = _subs_sec.strip('__')
                         _orig_sec_full = f'__sub__{_orig_sec}'
                         _node_matches = nodes_by_fullname[_orig_sec_full]  # type: list
 
