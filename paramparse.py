@@ -1368,12 +1368,13 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
                     cmd_args = cmd_args[1:]
 
         argv_id = 0
+        cfg_from_cmd = None
 
         if not cfg:
             # check for cfg files specified at command line
             if cmd and len(cmd_args) > 0 and ('--cfg' in cmd_args[0] or cmd_args[0].startswith('cfg=')):
                 _, arg_val = cmd_args[0].split('=')
-                cfg = arg_val
+                cfg = cfg_from_cmd = arg_val
                 argv_id += 1
                 if hasattr(obj, 'cfg'):
                     obj.cfg = cfg
@@ -1996,7 +1997,11 @@ def process(obj, args_in=None, cmd=True, cfg='', cfg_root='', cfg_ext='',
             print('Unknown arguments found:\n{}'.format(pformat(unknown)))
     else:
         args = parser.parse_args(args_in)
+
     _process_args_from_parser(obj, args, member_to_type)
+
+    if cfg_from_cmd is not None and hasattr(obj, 'cfg'):
+        obj.cfg = cfg_from_cmd
 
     # print('train_seq_ids: ', self.train_seq_ids)
     # print('test_seq_ids: ', self.test_seq_ids)
