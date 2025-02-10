@@ -1193,8 +1193,11 @@ def read_cfg(_cfg, enable_cache=1):
             """
             _templ_sec_names = []
             # any(map(_sec_name.startswith, ['(', '[', 'range(', 'irange(']))
-            if _sec_name.startswith('(') or _sec_name.startswith('[') or ':' in _sec_name or \
-                    _sec_name.startswith('range(') or _sec_name.startswith('irange('):
+            list_tokens = ['(', '[', ':', 'range(', 'irange(']
+            """allow a list section name specifier to be prefixed by ordinary str separated by underscore"""
+            if any(__sec_name.startswith(list_token)  for __sec_name in _sec_name.split('_')
+                   for list_token in list_tokens):
+            # if any(list_token in _sec_name for list_token in list_tokens):
                 # assert ',' not in _sec_name, \
                 #     "Combining template and range sections is not supported currently"
                 """in case there are multiple ranges or lists"""
